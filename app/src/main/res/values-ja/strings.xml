@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">wakAnd</string>
+    <string name="config_title">wakAnd 設定</string>
+    <string name="section_wakatime">WakaTime</string>
+    <string name="hint_user_name">ユーザー名</string>
+    <string name="hint_api_key">APIキー</string>
+    <string name="btn_save">保存</string>
+    <string name="section_tracking">トラッキング</string>
+    <string name="btn_grant_usage_access">使用状況アクセスを許可</string>
+    <string name="btn_enable_accessibility">ユーザー補助サービスを有効化</string>
+    <string name="current_app_default">現在のアプリ: —</string>
+    <string name="current_url_default">現在のURL: —</string>
+    <string name="accessibility_service_description">アクティビティ追跡のためにChromeの現在のURLを読み取ります。</string>
+    <string name="section_settings">設定</string>
+    <string name="btn_lang">言語 / Lang</string>
+    <string name="saved">保存しました</string>
+    <string name="lang_switched">言語を切り替えました</string>
+</resources>
