@@ -17,7 +17,9 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.List;
 import java.util.Locale;
@@ -31,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_API_URL = "api_url";
     private static final String KEY_PROJECT_NAME = "project_name";
+    private static final String KEY_PROJECT_ENABLED = "project_enabled";
     private static final String KEY_LANG = "lang";
     private static final long POLL_INTERVAL_MS = 3000;
 
@@ -38,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private TextInputEditText editApiKey;
     private TextInputEditText editApiUrl;
     private TextInputEditText editProjectName;
+    private TextInputLayout layoutProjectName;
+    private SwitchMaterial switchProject;
     private TextView txtCurrentApp;
     private TextView txtCurrentUrl;
 
@@ -71,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
         editApiKey = findViewById(R.id.editApiKey);
         editApiUrl = findViewById(R.id.editApiUrl);
         editProjectName = findViewById(R.id.editProjectName);
+        layoutProjectName = findViewById(R.id.layoutProjectName);
+        switchProject = findViewById(R.id.switchProject);
         txtCurrentApp = findViewById(R.id.txtCurrentApp);
         txtCurrentUrl = findViewById(R.id.txtCurrentUrl);
 
@@ -80,6 +87,10 @@ public class MainActivity extends AppCompatActivity {
         Button btnLang = findViewById(R.id.btnLang);
 
         loadSettings();
+
+        switchProject.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            layoutProjectName.setVisibility(isChecked ? android.view.View.VISIBLE : android.view.View.GONE);
+        });
 
         startService(new Intent(this, TrackingService.class));
 
@@ -108,7 +119,10 @@ public class MainActivity extends AppCompatActivity {
         editUserName.setText(prefs.getString(KEY_USER_NAME, ""));
         editApiKey.setText(prefs.getString(KEY_API_KEY, ""));
         editApiUrl.setText(prefs.getString(KEY_API_URL, "https://wakatime.com/api/v1"));
-        editProjectName.setText(prefs.getString(KEY_PROJECT_NAME, "wakAnd"));
+        boolean projectEnabled = prefs.getBoolean(KEY_PROJECT_ENABLED, false);
+        switchProject.setChecked(projectEnabled);
+        layoutProjectName.setVisibility(projectEnabled ? android.view.View.VISIBLE : android.view.View.GONE);
+        editProjectName.setText(prefs.getString(KEY_PROJECT_NAME, ""));
     }
 
     private void saveSettings() {
@@ -117,7 +131,8 @@ public class MainActivity extends AppCompatActivity {
                 .putString(KEY_USER_NAME, String.valueOf(editUserName.getText()))
                 .putString(KEY_API_KEY, String.valueOf(editApiKey.getText()))
                 .putString(KEY_API_URL, String.valueOf(editApiUrl.getText()))
-                .putString(KEY_PROJECT_NAME, String.valueOf(editProjectName.getText()))
+                .putBoolean(KEY_PROJECT_ENABLED, switchProject.isChecked())
+                .putString(KEY_PROJECT_NAME, switchProject.isChecked() ? String.valueOf(editProjectName.getText()) : "")
                 .apply();
         Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
     }

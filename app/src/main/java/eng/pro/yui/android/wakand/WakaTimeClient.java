@@ -23,7 +23,7 @@ public class WakaTimeClient {
     private static final String KEY_API_URL = "api_url";
     private static final String KEY_PROJECT_NAME = "project_name";
     private static final String DEFAULT_API_URL = "https://wakatime.com/api/v1";
-    private static final String DEFAULT_PROJECT_NAME = "wakAnd";
+    private static final String DEFAULT_PROJECT_NAME = "Unknown Project";
     private static final long HEARTBEAT_INTERVAL_MS = 120_000;
 
     private final Context context;
