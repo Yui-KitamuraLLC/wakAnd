@@ -28,6 +28,7 @@ public class TrackingService extends Service {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private NotificationManager notificationManager;
     private WakaTimeClient wakaTimeClient;
+    private String lastNotificationText = "";
 
     private final Runnable pollRunnable = new Runnable() {
         @Override
@@ -38,7 +39,10 @@ public class TrackingService extends Service {
             if (url != null && !url.isEmpty()) {
                 content += " | " + url;
             }
-            updateNotification(content);
+            if (!content.equals(lastNotificationText) || !isNotificationActive()) {
+                updateNotification(content);
+                lastNotificationText = content;
+            }
             sendHeartbeat(appName, url);
             handler.postDelayed(this, POLL_INTERVAL_MS);
         }
@@ -92,7 +96,16 @@ public class TrackingService extends Service {
     }
 
     private void updateNotification(String text) {
-        notificationManager.notify(NOTIFICATION_ID, buildNotification(text));
+        startForeground(NOTIFICATION_ID, buildNotification(text));
+    }
+
+    private boolean isNotificationActive() {
+        for (android.service.notification.StatusBarNotification sbn : notificationManager.getActiveNotifications()) {
+            if (sbn.getId() == NOTIFICATION_ID) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void sendHeartbeat(String appName, String url) {
