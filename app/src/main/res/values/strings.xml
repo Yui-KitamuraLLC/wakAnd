@@ -4,6 +4,8 @@
     <string name="section_wakatime">WakaTime</string>
     <string name="hint_user_name">User Name</string>
     <string name="hint_api_key">API Key</string>
+    <string name="hint_api_url">API URL</string>
+    <string name="hint_project_name">Project Name</string>
     <string name="btn_save">Save</string>
     <string name="section_tracking">Tracking</string>
     <string name="btn_grant_usage_access">Grant Usage Access</string>

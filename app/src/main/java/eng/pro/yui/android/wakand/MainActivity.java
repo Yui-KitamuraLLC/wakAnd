@@ -29,11 +29,15 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "wakand_prefs";
     private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_API_KEY = "api_key";
+    private static final String KEY_API_URL = "api_url";
+    private static final String KEY_PROJECT_NAME = "project_name";
     private static final String KEY_LANG = "lang";
     private static final long POLL_INTERVAL_MS = 3000;
 
     private TextInputEditText editUserName;
     private TextInputEditText editApiKey;
+    private TextInputEditText editApiUrl;
+    private TextInputEditText editProjectName;
     private TextView txtCurrentApp;
     private TextView txtCurrentUrl;
 
@@ -65,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
 
         editUserName = findViewById(R.id.editUserName);
         editApiKey = findViewById(R.id.editApiKey);
+        editApiUrl = findViewById(R.id.editApiUrl);
+        editProjectName = findViewById(R.id.editProjectName);
         txtCurrentApp = findViewById(R.id.txtCurrentApp);
         txtCurrentUrl = findViewById(R.id.txtCurrentUrl);
 
@@ -101,6 +107,8 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         editUserName.setText(prefs.getString(KEY_USER_NAME, ""));
         editApiKey.setText(prefs.getString(KEY_API_KEY, ""));
+        editApiUrl.setText(prefs.getString(KEY_API_URL, "https://wakatime.com/api/v1"));
+        editProjectName.setText(prefs.getString(KEY_PROJECT_NAME, "wakAnd"));
     }
 
     private void saveSettings() {
@@ -108,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
         prefs.edit()
                 .putString(KEY_USER_NAME, String.valueOf(editUserName.getText()))
                 .putString(KEY_API_KEY, String.valueOf(editApiKey.getText()))
+                .putString(KEY_API_URL, String.valueOf(editApiUrl.getText()))
+                .putString(KEY_PROJECT_NAME, String.valueOf(editProjectName.getText()))
                 .apply();
         Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
     }

@@ -25,6 +25,7 @@ public class TrackingService extends Service {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private NotificationManager notificationManager;
+    private WakaTimeClient wakaTimeClient;
 
     private final Runnable pollRunnable = new Runnable() {
         @Override
@@ -36,6 +37,7 @@ public class TrackingService extends Service {
                 content += " | " + url;
             }
             updateNotification(content);
+            sendHeartbeat(appName, url);
             handler.postDelayed(this, POLL_INTERVAL_MS);
         }
     };
@@ -44,6 +46,7 @@ public class TrackingService extends Service {
     public void onCreate() {
         super.onCreate();
         notificationManager = getSystemService(NotificationManager.class);
+        wakaTimeClient = new WakaTimeClient(this);
         createNotificationChannel();
     }
 
@@ -58,6 +61,9 @@ public class TrackingService extends Service {
     @Override
     public void onDestroy() {
         handler.removeCallbacks(pollRunnable);
+        if (wakaTimeClient != null) {
+            wakaTimeClient.shutdown();
+        }
         super.onDestroy();
     }
 
@@ -85,6 +91,13 @@ public class TrackingService extends Service {
 
     private void updateNotification(String text) {
         notificationManager.notify(NOTIFICATION_ID, buildNotification(text));
+    }
+
+    private void sendHeartbeat(String appName, String url) {
+        if (wakaTimeClient == null) return;
+        String entity = (url != null && !url.isEmpty()) ? url : appName;
+        String category = (url != null && !url.isEmpty()) ? "browsing" : "designing";
+        wakaTimeClient.sendHeartbeat(entity, category);
     }
 
     private String getCurrentAppName() {

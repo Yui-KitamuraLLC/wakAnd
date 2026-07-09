@@ -4,6 +4,8 @@
     <string name="section_wakatime">WakaTime</string>
     <string name="hint_user_name">ユーザー名</string>
     <string name="hint_api_key">APIキー</string>
+    <string name="hint_api_url">API URL</string>
+    <string name="hint_project_name">プロジェクト名</string>
     <string name="btn_save">保存</string>
     <string name="section_tracking">トラッキング</string>
     <string name="btn_grant_usage_access">使用状況アクセスを許可</string>
