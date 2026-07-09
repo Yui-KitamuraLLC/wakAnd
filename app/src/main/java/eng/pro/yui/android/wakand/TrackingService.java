@@ -95,7 +95,7 @@ public class TrackingService extends Service {
 
     private void sendHeartbeat(String appName, String url) {
         if (wakaTimeClient == null) return;
-        String entity = (url != null && !url.isEmpty()) ? url : appName;
+        String entity = appName;
         String category = (url != null && !url.isEmpty()) ? "browsing" : "designing";
         wakaTimeClient.sendHeartbeat(entity, category);
     }
