@@ -1,9 +1,12 @@
 package eng.pro.yui.android.wakand;
 
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -24,11 +27,21 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
             "writing docs", "building", "indexing", "researching"
     };
 
-    private final List<String> appNames;
+    private final List<AppInfo> apps;
     private final Map<String, AppSettingsManager.AppSetting> settings;
 
-    public AppListAdapter(List<String> appNames, Map<String, AppSettingsManager.AppSetting> settings) {
-        this.appNames = appNames;
+    public static class AppInfo {
+        public final String label;
+        public final String packageName;
+
+        public AppInfo(String label, String packageName) {
+            this.label = label;
+            this.packageName = packageName;
+        }
+    }
+
+    public AppListAdapter(List<AppInfo> apps, Map<String, AppSettingsManager.AppSetting> settings) {
+        this.apps = apps;
         this.settings = settings;
     }
 
@@ -46,8 +59,22 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String appName = appNames.get(position);
+        AppInfo appInfo = apps.get(position);
+        String appName = appInfo.label;
         AppSettingsManager.AppSetting setting = settings.get(appName);
+
+        // Load app icon
+        if (appInfo.packageName != null) {
+            try {
+                PackageManager pm = holder.itemView.getContext().getPackageManager();
+                Drawable icon = pm.getApplicationIcon(appInfo.packageName);
+                holder.imgAppIcon.setImageDrawable(icon);
+            } catch (PackageManager.NameNotFoundException e) {
+                holder.imgAppIcon.setImageResource(android.R.drawable.sym_def_app_icon);
+            }
+        } else {
+            holder.imgAppIcon.setImageResource(android.R.drawable.sym_def_app_icon);
+        }
         if (setting == null) {
             setting = new AppSettingsManager.AppSetting(false, "AndroidUsage", "designing");
             settings.put(appName, setting);
@@ -107,10 +134,11 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
 
     @Override
     public int getItemCount() {
-        return appNames.size();
+        return apps.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
+        final ImageView imgAppIcon;
         final TextView txtAppName;
         final SwitchMaterial switchApp;
         final View layoutAppSettings;
@@ -119,6 +147,7 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
+            imgAppIcon = itemView.findViewById(R.id.imgAppIcon);
             txtAppName = itemView.findViewById(R.id.txtAppName);
             switchApp = itemView.findViewById(R.id.switchApp);
             layoutAppSettings = itemView.findViewById(R.id.layoutAppSettings);

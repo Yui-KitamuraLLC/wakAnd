@@ -9,8 +9,6 @@ import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -156,16 +154,6 @@ public class TrackingService extends Service {
             sorted.put(s.getLastTimeUsed(), s);
         }
         String packageName = sorted.get(sorted.lastKey()).getPackageName();
-        return getAppLabel(packageName);
-    }
-
-    private String getAppLabel(String packageName) {
-        try {
-            PackageManager pm = getPackageManager();
-            ApplicationInfo info = pm.getApplicationInfo(packageName, 0);
-            return pm.getApplicationLabel(info).toString();
-        } catch (PackageManager.NameNotFoundException e) {
-            return packageName;
-        }
+        return AppUtil.getAppLabel(getPackageManager(), packageName);
     }
 }

@@ -5,7 +5,6 @@ import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -18,11 +17,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class AppListActivity extends AppCompatActivity {
 
@@ -53,10 +51,10 @@ public class AppListActivity extends AppCompatActivity {
         RecyclerView recyclerApps = findViewById(R.id.recyclerApps);
         Button btnSave = findViewById(R.id.btnSaveAppList);
 
-        List<String> appNames = getRecentAppNames();
+        List<AppListAdapter.AppInfo> apps = getRecentApps();
         Map<String, AppSettingsManager.AppSetting> settings = appSettingsManager.loadAll();
 
-        adapter = new AppListAdapter(appNames, settings);
+        adapter = new AppListAdapter(apps, settings);
         recyclerApps.setLayoutManager(new LinearLayoutManager(this));
         recyclerApps.setAdapter(adapter);
 
@@ -66,44 +64,43 @@ public class AppListActivity extends AppCompatActivity {
         });
     }
 
-    private List<String> getRecentAppNames() {
-        Set<String> appLabels = new HashSet<>();
+    private List<AppListAdapter.AppInfo> getRecentApps() {
+        Map<String, String> labelToPackage = new HashMap<>();
 
-        if (!hasUsageStatsPermission()) {
-            return new ArrayList<>(appLabels);
-        }
+        if (hasUsageStatsPermission()) {
+            UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
+            long now = System.currentTimeMillis();
+            List<UsageStats> stats = usm.queryUsageStats(
+                    UsageStatsManager.INTERVAL_WEEKLY, now - 7 * 24 * 60 * 60 * 1000L, now);
 
-        UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
-        long now = System.currentTimeMillis();
-        List<UsageStats> stats = usm.queryUsageStats(
-                UsageStatsManager.INTERVAL_WEEKLY, now - 7 * 24 * 60 * 60 * 1000L, now);
-
-        if (stats != null) {
-            PackageManager pm = getPackageManager();
-            for (UsageStats s : stats) {
-                if (s.getTotalTimeInForeground() > 0) {
-                    String label = getAppLabel(pm, s.getPackageName());
-                    appLabels.add(label);
+            if (stats != null) {
+                PackageManager pm = getPackageManager();
+                for (UsageStats s : stats) {
+                    if (s.getTotalTimeInForeground() > 0) {
+                        String pkg = s.getPackageName();
+                        String label = AppUtil.getAppLabel(pm, pkg);
+                        labelToPackage.put(label, pkg);
+                    }
                 }
             }
         }
 
         // Also include apps that already have settings
         Map<String, AppSettingsManager.AppSetting> existing = appSettingsManager.loadAll();
-        appLabels.addAll(existing.keySet());
-
-        List<String> sorted = new ArrayList<>(appLabels);
-        Collections.sort(sorted);
-        return sorted;
-    }
-
-    private String getAppLabel(PackageManager pm, String packageName) {
-        try {
-            ApplicationInfo info = pm.getApplicationInfo(packageName, 0);
-            return pm.getApplicationLabel(info).toString();
-        } catch (PackageManager.NameNotFoundException e) {
-            return packageName;
+        for (String label : existing.keySet()) {
+            if (!labelToPackage.containsKey(label)) {
+                labelToPackage.put(label, null);
+            }
         }
+
+        List<String> sortedLabels = new ArrayList<>(labelToPackage.keySet());
+        Collections.sort(sortedLabels);
+
+        List<AppListAdapter.AppInfo> apps = new ArrayList<>();
+        for (String label : sortedLabels) {
+            apps.add(new AppListAdapter.AppInfo(label, labelToPackage.get(label)));
+        }
+        return apps;
     }
 
     private boolean hasUsageStatsPermission() {
