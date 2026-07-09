@@ -9,6 +9,8 @@ import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -95,8 +97,9 @@ public class TrackingService extends Service {
 
     private void sendHeartbeat(String appName, String url) {
         if (wakaTimeClient == null) return;
-        String entity = appName;
-        String category = (url != null && !url.isEmpty()) ? "browsing" : "designing";
+        boolean isBrowsing = url != null && !url.isEmpty();
+        String entity = isBrowsing ? url : appName;
+        String category = isBrowsing ? "browsing" : "designing";
         wakaTimeClient.sendHeartbeat(entity, category);
     }
 
@@ -123,6 +126,17 @@ public class TrackingService extends Service {
         for (UsageStats s : stats) {
             sorted.put(s.getLastTimeUsed(), s);
         }
-        return sorted.get(sorted.lastKey()).getPackageName();
+        String packageName = sorted.get(sorted.lastKey()).getPackageName();
+        return getAppLabel(packageName);
+    }
+
+    private String getAppLabel(String packageName) {
+        try {
+            PackageManager pm = getPackageManager();
+            ApplicationInfo info = pm.getApplicationInfo(packageName, 0);
+            return pm.getApplicationLabel(info).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            return packageName;
+        }
     }
 }
