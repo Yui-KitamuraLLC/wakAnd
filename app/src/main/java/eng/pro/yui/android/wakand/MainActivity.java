@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         Button btnGrantUsageAccess = findViewById(R.id.btnGrantUsageAccess);
         Button btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
         Button btnLang = findViewById(R.id.btnLang);
+        Button btnAppList = findViewById(R.id.btnAppList);
 
         loadSettings();
 
@@ -99,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
         btnEnableAccessibility.setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        btnAppList.setOnClickListener(v ->
+                startActivity(new Intent(this, AppListActivity.class)));
         btnLang.setOnClickListener(v -> toggleLanguage());
     }
 

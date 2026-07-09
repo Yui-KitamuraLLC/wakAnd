@@ -156,6 +156,13 @@
             android:layout_marginBottom="8dp" />
 
         <Button
+            android:id="@+id/btnAppList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_app_list"
+            android:layout_marginBottom="8dp" />
+
+        <Button
             android:id="@+id/btnLang"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

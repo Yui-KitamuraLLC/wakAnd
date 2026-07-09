@@ -28,6 +28,7 @@ public class TrackingService extends Service {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private NotificationManager notificationManager;
     private WakaTimeClient wakaTimeClient;
+    private AppSettingsManager appSettingsManager;
     private String lastNotificationText = "";
 
     private final Runnable pollRunnable = new Runnable() {
@@ -53,6 +54,7 @@ public class TrackingService extends Service {
         super.onCreate();
         notificationManager = getSystemService(NotificationManager.class);
         wakaTimeClient = new WakaTimeClient(this);
+        appSettingsManager = new AppSettingsManager(this);
         createNotificationChannel();
     }
 
@@ -110,10 +112,24 @@ public class TrackingService extends Service {
 
     private void sendHeartbeat(String appName, String url) {
         if (wakaTimeClient == null) return;
+
         boolean isBrowsing = url != null && !url.isEmpty();
         String entity = isBrowsing ? url : appName;
         String category = isBrowsing ? "browsing" : "designing";
-        wakaTimeClient.sendHeartbeat(entity, category);
+        String project = null;
+
+        if (appSettingsManager.hasAnySettings()) {
+            AppSettingsManager.AppSetting setting = appSettingsManager.getSettingFor(appName);
+            if (setting == null || !setting.enabled) {
+                return;
+            }
+            project = setting.projectName;
+            if (!isBrowsing) {
+                category = setting.category;
+            }
+        }
+
+        wakaTimeClient.sendHeartbeat(entity, category, project);
     }
 
     private String getCurrentAppName() {

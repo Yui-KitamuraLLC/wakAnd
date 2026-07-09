@@ -15,6 +15,8 @@ import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.os.Build;
+
 public class WakaTimeClient {
 
     private static final String TAG = "WakaTimeClient";
@@ -37,6 +39,10 @@ public class WakaTimeClient {
     }
 
     public void sendHeartbeat(String entity, String appCategory) {
+        sendHeartbeat(entity, appCategory, null);
+    }
+
+    public void sendHeartbeat(String entity, String appCategory, String projectOverride) {
         if (entity == null || entity.isEmpty()) {
             return;
         }
@@ -67,8 +73,10 @@ public class WakaTimeClient {
                 heartbeat.put("type", "app");
                 heartbeat.put("category", appCategory != null ? appCategory : "browsing");
                 heartbeat.put("time", unixTime);
-                heartbeat.put("project", getProjectName());
+                heartbeat.put("project", projectOverride != null ? projectOverride : getProjectName());
                 heartbeat.put("language", "Android");
+                heartbeat.put("operating_system", "Android " + Build.VERSION.RELEASE);
+                heartbeat.put("machine", Build.MANUFACTURER + " " + Build.MODEL);
 
                 JSONArray heartbeats = new JSONArray();
                 heartbeats.put(heartbeat);

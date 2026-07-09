@@ -17,4 +17,7 @@
     <string name="btn_lang">言語 / Lang</string>
     <string name="saved">保存しました</string>
     <string name="lang_switched">言語を切り替えました</string>
+    <string name="app_list_title">アプリ一覧</string>
+    <string name="btn_app_list">アプリ一覧</string>
+    <string name="label_category">カテゴリ</string>
 </resources>
