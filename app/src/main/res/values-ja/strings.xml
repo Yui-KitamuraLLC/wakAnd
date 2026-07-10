@@ -18,6 +18,10 @@
     <string name="saved">保存しました</string>
     <string name="lang_switched">言語を切り替えました</string>
     <string name="app_list_title">アプリ一覧</string>
+    <string name="sort_by_name">アプリ名</string>
+    <string name="sort_by_install">インストール日時</string>
+    <string name="sort_by_enabled">有効/無効</string>
+    <string name="sort_by_project">プロジェクト名</string>
     <string name="btn_app_list">アプリ一覧</string>
     <string name="label_category">カテゴリ</string>
     <string name="user_not_linked">（未連携）</string>

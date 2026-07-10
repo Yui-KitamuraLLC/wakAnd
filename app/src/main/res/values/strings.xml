@@ -18,6 +18,10 @@
     <string name="saved">Saved</string>
     <string name="lang_switched">Language switched</string>
     <string name="app_list_title">App List</string>
+    <string name="sort_by_name">App Name</string>
+    <string name="sort_by_install">Install Date</string>
+    <string name="sort_by_enabled">Enabled</string>
+    <string name="sort_by_project">Project Name</string>
     <string name="btn_app_list">App List</string>
     <string name="label_category">Category</string>
     <string name="user_not_linked">(Not linked)</string>

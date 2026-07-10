@@ -16,8 +16,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHolder> {
 
@@ -33,10 +37,12 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
     public static class AppInfo {
         public final String label;
         public final String packageName;
+        public final long installTime;
 
-        public AppInfo(String label, String packageName) {
+        public AppInfo(String label, String packageName, long installTime) {
             this.label = label;
             this.packageName = packageName;
+            this.installTime = installTime;
         }
     }
 
@@ -47,6 +53,12 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
 
     public Map<String, AppSettingsManager.AppSetting> getSettings() {
         return settings;
+    }
+
+    public void updateList(List<AppInfo> newApps) {
+        apps.clear();
+        apps.addAll(newApps);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -81,6 +93,22 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
         }
 
         holder.txtAppName.setText(appName);
+
+        // Format install date
+        if (appInfo.installTime > 0) {
+            long now = System.currentTimeMillis();
+            long threeDaysMs = TimeUnit.DAYS.toMillis(3);
+            SimpleDateFormat fmt;
+            if (now - appInfo.installTime < threeDaysMs) {
+                fmt = new SimpleDateFormat("M/d H:mm", Locale.getDefault());
+            } else {
+                fmt = new SimpleDateFormat("yyyy/M/d", Locale.getDefault());
+            }
+            holder.txtInstallDate.setText(fmt.format(new Date(appInfo.installTime)));
+            holder.txtInstallDate.setVisibility(View.VISIBLE);
+        } else {
+            holder.txtInstallDate.setVisibility(View.GONE);
+        }
 
         ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(
                 holder.itemView.getContext(),
@@ -140,6 +168,7 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
     static class ViewHolder extends RecyclerView.ViewHolder {
         final ImageView imgAppIcon;
         final TextView txtAppName;
+        final TextView txtInstallDate;
         final SwitchMaterial switchApp;
         final View layoutAppSettings;
         final TextInputEditText editAppProject;
@@ -149,6 +178,7 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
             super(itemView);
             imgAppIcon = itemView.findViewById(R.id.imgAppIcon);
             txtAppName = itemView.findViewById(R.id.txtAppName);
+            txtInstallDate = itemView.findViewById(R.id.txtInstallDate);
             switchApp = itemView.findViewById(R.id.switchApp);
             layoutAppSettings = itemView.findViewById(R.id.layoutAppSettings);
             editAppProject = itemView.findViewById(R.id.editAppProject);
