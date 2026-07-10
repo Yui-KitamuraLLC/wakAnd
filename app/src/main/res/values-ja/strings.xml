@@ -10,8 +10,6 @@
     <string name="section_tracking">トラッキング</string>
     <string name="btn_grant_usage_access">使用状況アクセスを許可</string>
     <string name="btn_enable_accessibility">ユーザー補助サービスを有効化</string>
-    <string name="current_app_default">現在のアプリ: —</string>
-    <string name="current_url_default">現在のURL: —</string>
     <string name="accessibility_service_description">アクティビティ追跡のためにChromeの現在のURLを読み取ります。</string>
     <string name="section_settings">設定</string>
     <string name="btn_lang">言語 / Lang</string>

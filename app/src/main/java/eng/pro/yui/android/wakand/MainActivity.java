@@ -1,9 +1,6 @@
 package eng.pro.yui.android.wakand;
 
 import android.Manifest;
-import android.app.AppOpsManager;
-import android.app.usage.UsageStats;
-import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,8 +8,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -30,10 +25,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
-import java.util.List;
 import java.util.Locale;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_PROJECT_ENABLED = "project_enabled";
     private static final String KEY_LANG = "lang";
     static final String KEY_SILENT_NOTIFICATION = "silent_notification";
-    private static final long POLL_INTERVAL_MS = 3000;
 
     private TextView txtUserName;
     private TextView txtDashboardLink;
@@ -52,18 +43,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtApiKeyWarning;
     private String savedApiKey = "";
     private TextInputEditText editApiUrl;
-    private TextView txtCurrentApp;
-    private TextView txtCurrentUrl;
-
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable pollRunnable = new Runnable() {
-        @Override
-        public void run() {
-            updateCurrentApp();
-            updateCurrentUrl();
-            handler.postDelayed(this, POLL_INTERVAL_MS);
-        }
-    };
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -87,9 +66,6 @@ public class MainActivity extends AppCompatActivity {
         txtApiKeyWarning = findViewById(R.id.txtApiKeyWarning);
         ImageButton btnClearApiKey = findViewById(R.id.btnClearApiKey);
         editApiUrl = findViewById(R.id.editApiUrl);
-        txtCurrentApp = findViewById(R.id.txtCurrentApp);
-        txtCurrentUrl = findViewById(R.id.txtCurrentUrl);
-
         Button btnSave = findViewById(R.id.btnSave);
         Button btnGrantUsageAccess = findViewById(R.id.btnGrantUsageAccess);
         Button btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
@@ -150,17 +126,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        handler.post(pollRunnable);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        handler.removeCallbacks(pollRunnable);
-    }
 
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -209,38 +174,6 @@ public class MainActivity extends AppCompatActivity {
         recreate();
     }
 
-    private void updateCurrentApp() {
-        if (!hasUsageStatsPermission()) {
-            txtCurrentApp.setText("Current App: (usage access not granted)");
-            return;
-        }
-
-        UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
-        long now = System.currentTimeMillis();
-        List<UsageStats> stats = usm.queryUsageStats(
-                UsageStatsManager.INTERVAL_DAILY, now - 60_000, now);
-
-        if (stats == null || stats.isEmpty()) {
-            txtCurrentApp.setText("Current App: —");
-            return;
-        }
-
-        SortedMap<Long, UsageStats> sorted = new TreeMap<>();
-        for (UsageStats s : stats) {
-            sorted.put(s.getLastTimeUsed(), s);
-        }
-        String topPackage = sorted.get(sorted.lastKey()).getPackageName();
-        txtCurrentApp.setText("Current App: " + topPackage);
-    }
-
-    private void updateCurrentUrl() {
-        String url = ChromeUrlAccessibilityService.getLastUrl();
-        if (url != null && !url.isEmpty()) {
-            txtCurrentUrl.setText("Current URL: " + url);
-        } else {
-            txtCurrentUrl.setText("Current URL: —");
-        }
-    }
 
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -256,12 +189,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean hasUsageStatsPermission() {
-        AppOpsManager appOps = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
-        int mode = appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                getPackageName());
-        return mode == AppOpsManager.MODE_ALLOWED;
-    }
 }

@@ -10,8 +10,6 @@
     <string name="section_tracking">Tracking</string>
     <string name="btn_grant_usage_access">Grant Usage Access</string>
     <string name="btn_enable_accessibility">Enable Accessibility Service</string>
-    <string name="current_app_default">Current App: —</string>
-    <string name="current_url_default">Current URL: —</string>
     <string name="accessibility_service_description">Reads the current URL from Chrome for activity tracking.</string>
     <string name="section_settings">Settings</string>
     <string name="btn_lang">Lang / 言語</string>

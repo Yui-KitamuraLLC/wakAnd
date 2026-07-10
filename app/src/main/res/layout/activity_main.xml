@@ -147,22 +147,6 @@
             android:text="@string/btn_enable_accessibility"
             android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:id="@+id/txtCurrentApp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/current_app_default"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/txtCurrentUrl"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/current_url_default"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
         <!-- Settings -->
         <TextView
             android:layout_width="wrap_content"
