@@ -23,7 +23,6 @@
     <string name="sort_by_enabled">有効/無効</string>
     <string name="sort_by_project">プロジェクト名</string>
     <string name="btn_app_list">アプリ一覧</string>
-    <string name="label_category">カテゴリ</string>
     <string name="user_not_linked">（未連携）</string>
     <string name="dashboard">ダッシュボード</string>
     <string name="btn_clear_api_key">APIキーをクリア</string>
@@ -35,4 +34,6 @@
     <string name="new_app_installed">新しいアプリがインストールされました</string>
     <string name="action_link_wakatime">WakaTimeに連携する</string>
     <string name="action_ignore">記録しない</string>
+    <string name="new_project">+ 新規プロジェクト</string>
+    <string name="hint_new_project_name">新規プロジェクト名</string>
 </resources>

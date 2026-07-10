@@ -113,7 +113,6 @@ public class TrackingService extends Service {
 
         boolean isBrowsing = url != null && !url.isEmpty();
         String entity = isBrowsing ? url : appName;
-        String category = isBrowsing ? "browsing" : "designing";
         String project = null;
 
         if (appSettingsManager.hasAnySettings()) {
@@ -122,12 +121,9 @@ public class TrackingService extends Service {
                 return;
             }
             project = setting.projectName;
-            if (!isBrowsing) {
-                category = setting.category;
-            }
         }
 
-        wakaTimeClient.sendHeartbeat(entity, category, project);
+        wakaTimeClient.sendHeartbeat(entity, project);
     }
 
     private String getCurrentAppName() {

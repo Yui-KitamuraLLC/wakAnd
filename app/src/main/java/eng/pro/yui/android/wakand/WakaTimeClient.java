@@ -13,7 +13,10 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,11 +43,11 @@ public class WakaTimeClient {
         this.context = context.getApplicationContext();
     }
 
-    public void sendHeartbeat(String entity, String appCategory) {
-        sendHeartbeat(entity, appCategory, null);
+    public void sendHeartbeat(String entity) {
+        sendHeartbeat(entity, null);
     }
 
-    public void sendHeartbeat(String entity, String appCategory, String projectOverride) {
+    public void sendHeartbeat(String entity, String projectOverride) {
         if (entity == null || entity.isEmpty()) {
             return;
         }
@@ -73,7 +76,6 @@ public class WakaTimeClient {
                 JSONObject heartbeat = new JSONObject();
                 heartbeat.put("entity", entity);
                 heartbeat.put("type", "app");
-                heartbeat.put("category", appCategory != null ? appCategory : "browsing");
                 heartbeat.put("time", unixTime);
                 heartbeat.put("project", projectOverride != null ? projectOverride : getProjectName());
                 heartbeat.put("language", "Android");
@@ -128,6 +130,58 @@ public class WakaTimeClient {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String name = prefs.getString(KEY_PROJECT_NAME, DEFAULT_PROJECT_NAME);
         return (name == null || name.isEmpty()) ? DEFAULT_PROJECT_NAME : name;
+    }
+
+    public interface ProjectsCallback {
+        void onResult(List<String> projectNames);
+    }
+
+    public void fetchProjects(ProjectsCallback callback) {
+        String apiKey = getApiKey();
+        if (apiKey == null || apiKey.isEmpty()) {
+            callback.onResult(new ArrayList<>());
+            return;
+        }
+
+        executor.execute(() -> {
+            try {
+                String urlStr = getApiUrl() + "/users/current/projects";
+                URL url = new URL(urlStr);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
+                conn.setRequestProperty("Authorization", "Basic " + encoded);
+                conn.setRequestProperty("User-Agent", "wakAnd/1.0 android-wakatime");
+                conn.setConnectTimeout(15_000);
+                conn.setReadTimeout(15_000);
+
+                int code = conn.getResponseCode();
+                if (code == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    reader.close();
+                    JSONObject json = new JSONObject(sb.toString());
+                    JSONArray data = json.getJSONArray("data");
+                    List<String> names = new ArrayList<>();
+                    for (int i = 0; i < data.length(); i++) {
+                        names.add(data.getJSONObject(i).getString("name"));
+                    }
+                    Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
+                    callback.onResult(names);
+                } else {
+                    Log.w(TAG, "fetchProjects failed: HTTP " + code);
+                    callback.onResult(new ArrayList<>());
+                }
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to fetch projects", e);
+                callback.onResult(new ArrayList<>());
+            }
+        });
     }
 
     public interface UserCallback {

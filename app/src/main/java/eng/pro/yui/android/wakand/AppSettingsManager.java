@@ -24,12 +24,10 @@ public class AppSettingsManager {
     public static class AppSetting {
         public boolean enabled;
         public String projectName;
-        public String category;
 
-        public AppSetting(boolean enabled, String projectName, String category) {
+        public AppSetting(boolean enabled, String projectName) {
             this.enabled = enabled;
             this.projectName = projectName;
-            this.category = category;
         }
     }
 
@@ -44,8 +42,7 @@ public class AppSettingsManager {
                 JSONObject obj = root.getJSONObject(appName);
                 result.put(appName, new AppSetting(
                         obj.optBoolean("enabled", false),
-                        obj.optString("projectName", "AndroidUsage"),
-                        obj.optString("category", "designing")
+                        obj.optString("projectName", "AndroidUsage")
                 ));
             }
         } catch (JSONException ignored) {
@@ -60,7 +57,6 @@ public class AppSettingsManager {
                 JSONObject obj = new JSONObject();
                 obj.put("enabled", entry.getValue().enabled);
                 obj.put("projectName", entry.getValue().projectName);
-                obj.put("category", entry.getValue().category);
                 root.put(entry.getKey(), obj);
             }
         } catch (JSONException ignored) {

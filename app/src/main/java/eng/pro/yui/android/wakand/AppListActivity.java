@@ -34,6 +34,7 @@ public class AppListActivity extends AppCompatActivity {
     private AppSettingsManager appSettingsManager;
     private AppListAdapter adapter;
     private List<AppListAdapter.AppInfo> allApps;
+    private WakaTimeClient wakaTimeClient;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -72,8 +73,12 @@ public class AppListActivity extends AppCompatActivity {
         Map<String, AppSettingsManager.AppSetting> settings = appSettingsManager.loadAll();
 
         adapter = new AppListAdapter(new ArrayList<>(allApps), settings);
+        adapter.setNewProjectLabel(getString(R.string.new_project));
         recyclerApps.setLayoutManager(new LinearLayoutManager(this));
         recyclerApps.setAdapter(adapter);
+
+        wakaTimeClient = new WakaTimeClient(this);
+        wakaTimeClient.fetchProjects(projects -> runOnUiThread(() -> adapter.setApiProjects(projects)));
 
         spinnerSort.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override

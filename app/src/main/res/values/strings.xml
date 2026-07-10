@@ -23,7 +23,6 @@
     <string name="sort_by_enabled">Enabled</string>
     <string name="sort_by_project">Project Name</string>
     <string name="btn_app_list">App List</string>
-    <string name="label_category">Category</string>
     <string name="user_not_linked">(Not linked)</string>
     <string name="dashboard">Dashboard</string>
     <string name="btn_clear_api_key">Clear API Key</string>
@@ -35,4 +34,6 @@
     <string name="new_app_installed">New app installed</string>
     <string name="action_link_wakatime">Link to WakaTime</string>
     <string name="action_ignore">Ignore</string>
+    <string name="new_project">+ New Project</string>
+    <string name="hint_new_project_name">New Project Name</string>
 </resources>
