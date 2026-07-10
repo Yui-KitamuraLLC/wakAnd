@@ -20,4 +20,6 @@
     <string name="app_list_title">アプリ一覧</string>
     <string name="btn_app_list">アプリ一覧</string>
     <string name="label_category">カテゴリ</string>
+    <string name="user_not_linked">（未連携）</string>
+    <string name="dashboard">ダッシュボード</string>
 </resources>

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +35,6 @@ import java.util.TreeMap;
 public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "wakand_prefs";
-    private static final String KEY_USER_NAME = "user_name";
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_API_URL = "api_url";
     private static final String KEY_PROJECT_NAME = "project_name";
@@ -42,7 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_LANG = "lang";
     private static final long POLL_INTERVAL_MS = 3000;
 
-    private TextInputEditText editUserName;
+    private TextView txtUserName;
+    private TextView txtDashboardLink;
     private TextInputEditText editApiKey;
     private TextInputEditText editApiUrl;
     private TextInputEditText editProjectName;
@@ -77,7 +78,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        editUserName = findViewById(R.id.editUserName);
+        txtUserName = findViewById(R.id.txtUserName);
+        txtDashboardLink = findViewById(R.id.txtDashboardLink);
         editApiKey = findViewById(R.id.editApiKey);
         editApiUrl = findViewById(R.id.editApiUrl);
         editProjectName = findViewById(R.id.editProjectName);
@@ -124,25 +126,43 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        editUserName.setText(prefs.getString(KEY_USER_NAME, ""));
         editApiKey.setText(prefs.getString(KEY_API_KEY, ""));
         editApiUrl.setText(prefs.getString(KEY_API_URL, "https://wakatime.com/api/v1"));
         boolean projectEnabled = prefs.getBoolean(KEY_PROJECT_ENABLED, false);
         switchProject.setChecked(projectEnabled);
         layoutProjectName.setVisibility(projectEnabled ? android.view.View.VISIBLE : android.view.View.GONE);
         editProjectName.setText(prefs.getString(KEY_PROJECT_NAME, ""));
+        fetchAndDisplayUser();
+    }
+
+    private void fetchAndDisplayUser() {
+        WakaTimeClient client = new WakaTimeClient(this);
+        client.fetchCurrentUser((displayName, dashboardUrl) -> runOnUiThread(() -> {
+            if (displayName != null && !displayName.isEmpty()) {
+                txtUserName.setText(displayName);
+                txtDashboardLink.setVisibility(android.view.View.VISIBLE);
+                txtDashboardLink.setOnClickListener(v -> {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(dashboardUrl));
+                    startActivity(intent);
+                });
+            } else {
+                txtUserName.setText(R.string.user_not_linked);
+                txtDashboardLink.setVisibility(android.view.View.GONE);
+            }
+            client.shutdown();
+        }));
     }
 
     private void saveSettings() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         prefs.edit()
-                .putString(KEY_USER_NAME, String.valueOf(editUserName.getText()))
                 .putString(KEY_API_KEY, String.valueOf(editApiKey.getText()))
                 .putString(KEY_API_URL, String.valueOf(editApiUrl.getText()))
                 .putBoolean(KEY_PROJECT_ENABLED, switchProject.isChecked())
                 .putString(KEY_PROJECT_NAME, switchProject.isChecked() ? String.valueOf(editProjectName.getText()) : "")
                 .apply();
         Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
+        fetchAndDisplayUser();
     }
 
     private void toggleLanguage() {

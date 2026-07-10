@@ -7,6 +7,8 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -126,6 +128,55 @@ public class WakaTimeClient {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String name = prefs.getString(KEY_PROJECT_NAME, DEFAULT_PROJECT_NAME);
         return (name == null || name.isEmpty()) ? DEFAULT_PROJECT_NAME : name;
+    }
+
+    public interface UserCallback {
+        void onResult(String displayName, String dashboardUrl);
+    }
+
+    public void fetchCurrentUser(UserCallback callback) {
+        String apiKey = getApiKey();
+        if (apiKey == null || apiKey.isEmpty()) {
+            callback.onResult(null, null);
+            return;
+        }
+
+        executor.execute(() -> {
+            try {
+                String urlStr = getApiUrl() + "/users/current";
+                URL url = new URL(urlStr);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
+                conn.setRequestProperty("Authorization", "Basic " + encoded);
+                conn.setRequestProperty("User-Agent", "wakAnd/1.0 android-wakatime");
+                conn.setConnectTimeout(15_000);
+                conn.setReadTimeout(15_000);
+
+                int code = conn.getResponseCode();
+                if (code == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                    reader.close();
+                    JSONObject json = new JSONObject(sb.toString());
+                    JSONObject data = json.getJSONObject("data");
+                    String displayName = data.optString("display_name", data.optString("username", ""));
+                    String dashboardUrl = getApiUrl().replace("/api/v1", "") + "/dashboard";
+                    callback.onResult(displayName, dashboardUrl);
+                } else {
+                    Log.w(TAG, "fetchCurrentUser failed: HTTP " + code);
+                    callback.onResult(null, null);
+                }
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to fetch current user", e);
+                callback.onResult(null, null);
+            }
+        });
     }
 
     public void shutdown() {
