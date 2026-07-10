@@ -30,15 +30,19 @@ public class TrackingService extends Service {
     private AppSettingsManager appSettingsManager;
     private String lastNotificationText = "";
 
+    private static final String CHROME_PACKAGE = "com.android.chrome";
+
     private final Runnable pollRunnable = new Runnable() {
         @Override
         public void run() {
-            String appName = getCurrentAppName();
-            String url = ChromeUrlAccessibilityService.getLastUrl();
+            String packageName = getCurrentPackageName();
+            String appName = AppUtil.getAppLabel(getPackageManager(), packageName);
+            boolean isBrowser = CHROME_PACKAGE.equals(packageName);
+            String url = isBrowser ? ChromeUrlAccessibilityService.getLastUrl() : null;
             String content;
             if (isTrackedApp(appName)) {
                 content = appName;
-                if (url != null && !url.isEmpty()) {
+                if (isBrowser && url != null && !url.isEmpty()) {
                     content += " | " + url;
                 }
             } else {
@@ -145,14 +149,14 @@ public class TrackingService extends Service {
         return setting != null && setting.enabled;
     }
 
-    private String getCurrentAppName() {
+    private String getCurrentPackageName() {
         AppOpsManager appOps = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
         int mode = appOps.unsafeCheckOpNoThrow(
                 AppOpsManager.OPSTR_GET_USAGE_STATS,
                 android.os.Process.myUid(),
                 getPackageName());
         if (mode != AppOpsManager.MODE_ALLOWED) {
-            return "(no permission)";
+            return "";
         }
 
         UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
@@ -161,14 +165,13 @@ public class TrackingService extends Service {
                 UsageStatsManager.INTERVAL_DAILY, now - 60_000, now);
 
         if (stats == null || stats.isEmpty()) {
-            return "—";
+            return "";
         }
 
         SortedMap<Long, UsageStats> sorted = new TreeMap<>();
         for (UsageStats s : stats) {
             sorted.put(s.getLastTimeUsed(), s);
         }
-        String packageName = sorted.get(sorted.lastKey()).getPackageName();
-        return AppUtil.getAppLabel(getPackageManager(), packageName);
+        return sorted.get(sorted.lastKey()).getPackageName();
     }
 }
