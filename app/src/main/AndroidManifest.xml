@@ -54,7 +54,7 @@
 
         <receiver
                 android:name=".NewAppReceiver"
-                android:exported="false">
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <data android:scheme="package" />
