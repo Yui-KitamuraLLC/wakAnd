@@ -1,4 +1,4 @@
-package pro.eng.yui.android.wakand;
+package pro.eng.yui.android.wakAnd;
 
 import android.app.Notification;
 import android.app.NotificationChannel;

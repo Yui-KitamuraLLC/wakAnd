@@ -1,4 +1,4 @@
-package pro.eng.yui.android.wakand;
+package pro.eng.yui.android.wakAnd;
 
 import android.Manifest;
 import android.content.Context;
