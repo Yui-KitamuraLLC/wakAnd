@@ -11,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "pro.eng.yui.android.wakand"
+        applicationId "pro.eng.yui.android.wakAnd"
         minSdk 36
         targetSdk 36
         versionCode 1
