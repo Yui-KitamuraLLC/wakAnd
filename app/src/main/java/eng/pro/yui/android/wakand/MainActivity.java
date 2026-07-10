@@ -51,9 +51,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtApiKeyWarning;
     private String savedApiKey = "";
     private TextInputEditText editApiUrl;
-    private TextInputEditText editProjectName;
-    private TextInputLayout layoutProjectName;
-    private SwitchMaterial switchProject;
     private TextView txtCurrentApp;
     private TextView txtCurrentUrl;
 
@@ -89,9 +86,6 @@ public class MainActivity extends AppCompatActivity {
         txtApiKeyWarning = findViewById(R.id.txtApiKeyWarning);
         ImageButton btnClearApiKey = findViewById(R.id.btnClearApiKey);
         editApiUrl = findViewById(R.id.editApiUrl);
-        editProjectName = findViewById(R.id.editProjectName);
-        layoutProjectName = findViewById(R.id.layoutProjectName);
-        switchProject = findViewById(R.id.switchProject);
         txtCurrentApp = findViewById(R.id.txtCurrentApp);
         txtCurrentUrl = findViewById(R.id.txtCurrentUrl);
 
@@ -102,10 +96,6 @@ public class MainActivity extends AppCompatActivity {
         Button btnAppList = findViewById(R.id.btnAppList);
 
         loadSettings();
-
-        switchProject.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            layoutProjectName.setVisibility(isChecked ? android.view.View.VISIBLE : android.view.View.GONE);
-        });
 
         editApiKey.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -164,10 +154,6 @@ public class MainActivity extends AppCompatActivity {
         editApiKey.setText(savedApiKey);
         txtApiKeyWarning.setVisibility(android.view.View.GONE);
         editApiUrl.setText(prefs.getString(KEY_API_URL, "https://wakatime.com/api/v1"));
-        boolean projectEnabled = prefs.getBoolean(KEY_PROJECT_ENABLED, false);
-        switchProject.setChecked(projectEnabled);
-        layoutProjectName.setVisibility(projectEnabled ? android.view.View.VISIBLE : android.view.View.GONE);
-        editProjectName.setText(prefs.getString(KEY_PROJECT_NAME, ""));
         fetchAndDisplayUser();
     }
 
@@ -194,8 +180,6 @@ public class MainActivity extends AppCompatActivity {
         prefs.edit()
                 .putString(KEY_API_KEY, String.valueOf(editApiKey.getText()))
                 .putString(KEY_API_URL, String.valueOf(editApiUrl.getText()))
-                .putBoolean(KEY_PROJECT_ENABLED, switchProject.isChecked())
-                .putString(KEY_PROJECT_NAME, switchProject.isChecked() ? String.valueOf(editProjectName.getText()) : "")
                 .apply();
         savedApiKey = String.valueOf(editApiKey.getText());
         txtApiKeyWarning.setVisibility(android.view.View.GONE);
