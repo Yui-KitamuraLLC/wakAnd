@@ -34,9 +34,14 @@ public class TrackingService extends Service {
         public void run() {
             String appName = getCurrentAppName();
             String url = ChromeUrlAccessibilityService.getLastUrl();
-            String content = appName;
-            if (url != null && !url.isEmpty()) {
-                content += " | " + url;
+            String content;
+            if (isTrackedApp(appName)) {
+                content = appName;
+                if (url != null && !url.isEmpty()) {
+                    content += " | " + url;
+                }
+            } else {
+                content = getString(R.string.label_not_tracked);
             }
             if (!content.equals(lastNotificationText) || !isNotificationActive()) {
                 updateNotification(content);
@@ -124,6 +129,14 @@ public class TrackingService extends Service {
         }
 
         wakaTimeClient.sendHeartbeat(entity, project);
+    }
+
+    private boolean isTrackedApp(String appName) {
+        if (!appSettingsManager.hasAnySettings()) {
+            return true;
+        }
+        AppSettingsManager.AppSetting setting = appSettingsManager.getSettingFor(appName);
+        return setting != null && setting.enabled;
     }
 
     private String getCurrentAppName() {

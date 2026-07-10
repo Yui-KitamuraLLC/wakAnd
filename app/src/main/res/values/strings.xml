@@ -36,4 +36,5 @@
     <string name="action_ignore">Ignore</string>
     <string name="new_project">+ New Project</string>
     <string name="hint_new_project_name">New Project Name</string>
+    <string name="label_not_tracked">Not Tracked</string>
 </resources>

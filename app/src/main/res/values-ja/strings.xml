@@ -36,4 +36,5 @@
     <string name="action_ignore">記録しない</string>
     <string name="new_project">+ 新規プロジェクト</string>
     <string name="hint_new_project_name">新規プロジェクト名</string>
+    <string name="label_not_tracked">計測対象外</string>
 </resources>
