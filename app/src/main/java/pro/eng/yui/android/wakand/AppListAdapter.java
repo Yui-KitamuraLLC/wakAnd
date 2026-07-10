@@ -1,4 +1,4 @@
-package eng.pro.yui.android.wakand;
+package pro.eng.yui.android.wakand;
 
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;

@@ -1,4 +1,4 @@
-package eng.pro.yui.android.wakand;
+package pro.eng.yui.android.wakand;
 
 import org.junit.Test;
 

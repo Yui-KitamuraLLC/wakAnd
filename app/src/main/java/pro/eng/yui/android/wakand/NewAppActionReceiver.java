@@ -1,4 +1,4 @@
-package eng.pro.yui.android.wakand;
+package pro.eng.yui.android.wakand;
 
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -9,8 +9,8 @@ import java.util.Map;
 
 public class NewAppActionReceiver extends BroadcastReceiver {
 
-    static final String ACTION_LINK = "eng.pro.yui.android.wakand.ACTION_LINK_WAKATIME";
-    static final String ACTION_IGNORE = "eng.pro.yui.android.wakand.ACTION_IGNORE_APP";
+    static final String ACTION_LINK = "pro.eng.yui.android.wakand.ACTION_LINK_WAKATIME";
+    static final String ACTION_IGNORE = "pro.eng.yui.android.wakand.ACTION_IGNORE_APP";
     static final String EXTRA_PACKAGE_NAME = "extra_package_name";
     static final String EXTRA_NOTIFICATION_ID = "extra_notification_id";
 

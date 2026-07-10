@@ -1,4 +1,4 @@
-package eng.pro.yui.android.wakand;
+package pro.eng.yui.android.wakand;
 
 import android.content.Context;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -20,6 +20,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("eng.pro.yui.android.wakand", appContext.getPackageName());
+        assertEquals("pro.eng.yui.android.wakand", appContext.getPackageName());
     }
 }
