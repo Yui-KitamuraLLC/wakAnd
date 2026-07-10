@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_PROJECT_NAME = "project_name";
     private static final String KEY_PROJECT_ENABLED = "project_enabled";
     private static final String KEY_LANG = "lang";
+    static final String KEY_SILENT_NOTIFICATION = "silent_notification";
     private static final long POLL_INTERVAL_MS = 3000;
 
     private TextView txtUserName;
@@ -134,6 +135,19 @@ public class MainActivity extends AppCompatActivity {
         btnAppList.setOnClickListener(v ->
                 startActivity(new Intent(this, AppListActivity.class)));
         btnLang.setOnClickListener(v -> toggleLanguage());
+
+        SwitchMaterial switchSilent = findViewById(R.id.switchSilentNotification);
+        SharedPreferences prefsForSwitch = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        switchSilent.setChecked(prefsForSwitch.getBoolean(KEY_SILENT_NOTIFICATION, true));
+        switchSilent.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                    .putBoolean(KEY_SILENT_NOTIFICATION, isChecked).apply();
+            if (isChecked) {
+                requestNotificationPermissionAndStart();
+            } else {
+                stopService(new Intent(this, TrackingService.class));
+            }
+        });
     }
 
     @Override

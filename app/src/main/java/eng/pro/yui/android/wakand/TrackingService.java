@@ -9,6 +9,7 @@ import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -63,6 +64,11 @@ public class TrackingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        SharedPreferences prefs = getSharedPreferences("wakand_prefs", MODE_PRIVATE);
+        if (!prefs.getBoolean(MainActivity.KEY_SILENT_NOTIFICATION, true)) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         Notification notification = buildNotification("Tracking...");
         startForeground(NOTIFICATION_ID, notification);
         handler.post(pollRunnable);

@@ -182,7 +182,14 @@
             android:id="@+id/btnLang"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/btn_lang" />
+            android:text="@string/btn_lang"
+            android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchSilentNotification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_silent_notification" />
 
     </LinearLayout>
 </ScrollView>
