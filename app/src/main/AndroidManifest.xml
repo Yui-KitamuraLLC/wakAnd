@@ -52,6 +52,19 @@
                     android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <receiver
+                android:name=".NewAppReceiver"
+                android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+                android:name=".NewAppActionReceiver"
+                android:exported="false" />
+
     </application>
 
 </manifest>

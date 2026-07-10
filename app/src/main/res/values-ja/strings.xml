@@ -32,4 +32,7 @@
     <string name="confirm_clear_api_key">連携解除しますがよろしいですか？</string>
     <string name="yes">はい</string>
     <string name="no">いいえ</string>
+    <string name="new_app_installed">新しいアプリがインストールされました</string>
+    <string name="action_link_wakatime">WakaTimeに連携する</string>
+    <string name="action_ignore">記録しない</string>
 </resources>

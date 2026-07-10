@@ -32,4 +32,7 @@
     <string name="confirm_clear_api_key">Are you sure you want to unlink?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="new_app_installed">New app installed</string>
+    <string name="action_link_wakatime">Link to WakaTime</string>
+    <string name="action_ignore">Ignore</string>
 </resources>
