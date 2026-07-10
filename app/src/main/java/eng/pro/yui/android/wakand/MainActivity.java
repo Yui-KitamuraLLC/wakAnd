@@ -1,11 +1,13 @@
 package eng.pro.yui.android.wakand;
 
+import android.Manifest;
 import android.app.AppOpsManager;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,7 +17,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
@@ -93,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
             layoutProjectName.setVisibility(isChecked ? android.view.View.VISIBLE : android.view.View.GONE);
         });
 
-        startService(new Intent(this, TrackingService.class));
+        requestNotificationPermissionAndStart();
 
         btnSave.setOnClickListener(v -> saveSettings());
         btnGrantUsageAccess.setOnClickListener(v ->
@@ -178,6 +183,20 @@ public class MainActivity extends AppCompatActivity {
             txtCurrentUrl.setText("Current URL: " + url);
         } else {
             txtCurrentUrl.setText("Current URL: —");
+        }
+    }
+
+    private final ActivityResultLauncher<String> notificationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                startService(new Intent(this, TrackingService.class));
+            });
+
+    private void requestNotificationPermissionAndStart() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        } else {
+            startService(new Intent(this, TrackingService.class));
         }
     }
 
