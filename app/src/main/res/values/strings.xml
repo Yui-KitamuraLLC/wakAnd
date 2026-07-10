@@ -22,4 +22,10 @@
     <string name="label_category">Category</string>
     <string name="user_not_linked">(Not linked)</string>
     <string name="dashboard">Dashboard</string>
+    <string name="btn_clear_api_key">Clear API Key</string>
+    <string name="api_key_unsaved">New API key not linked</string>
+    <string name="api_key_cleared">API key cleared</string>
+    <string name="confirm_clear_api_key">Are you sure you want to unlink?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

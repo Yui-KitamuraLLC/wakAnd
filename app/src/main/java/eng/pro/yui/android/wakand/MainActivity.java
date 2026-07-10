@@ -14,7 +14,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtUserName;
     private TextView txtDashboardLink;
     private TextInputEditText editApiKey;
+    private TextView txtApiKeyWarning;
+    private String savedApiKey = "";
     private TextInputEditText editApiUrl;
     private TextInputEditText editProjectName;
     private TextInputLayout layoutProjectName;
@@ -81,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
         txtUserName = findViewById(R.id.txtUserName);
         txtDashboardLink = findViewById(R.id.txtDashboardLink);
         editApiKey = findViewById(R.id.editApiKey);
+        txtApiKeyWarning = findViewById(R.id.txtApiKeyWarning);
+        ImageButton btnClearApiKey = findViewById(R.id.btnClearApiKey);
         editApiUrl = findViewById(R.id.editApiUrl);
         editProjectName = findViewById(R.id.editProjectName);
         layoutProjectName = findViewById(R.id.layoutProjectName);
@@ -98,6 +105,33 @@ public class MainActivity extends AppCompatActivity {
 
         switchProject.setOnCheckedChangeListener((buttonView, isChecked) -> {
             layoutProjectName.setVisibility(isChecked ? android.view.View.VISIBLE : android.view.View.GONE);
+        });
+
+        editApiKey.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                boolean changed = !s.toString().equals(savedApiKey);
+                txtApiKeyWarning.setVisibility(changed ? android.view.View.VISIBLE : android.view.View.GONE);
+            }
+        });
+
+        btnClearApiKey.setOnClickListener(v -> {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setMessage(R.string.confirm_clear_api_key)
+                    .setPositiveButton(R.string.yes, (dialog, which) -> {
+                        editApiKey.setText("");
+                        savedApiKey = "";
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                                .putString(KEY_API_KEY, "").apply();
+                        txtApiKeyWarning.setVisibility(android.view.View.GONE);
+                        txtUserName.setText(R.string.user_not_linked);
+                        txtDashboardLink.setVisibility(android.view.View.GONE);
+                        Toast.makeText(this, R.string.api_key_cleared, Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton(R.string.no, null)
+                    .show();
         });
 
         requestNotificationPermissionAndStart();
@@ -126,7 +160,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        editApiKey.setText(prefs.getString(KEY_API_KEY, ""));
+        savedApiKey = prefs.getString(KEY_API_KEY, "");
+        editApiKey.setText(savedApiKey);
+        txtApiKeyWarning.setVisibility(android.view.View.GONE);
         editApiUrl.setText(prefs.getString(KEY_API_URL, "https://wakatime.com/api/v1"));
         boolean projectEnabled = prefs.getBoolean(KEY_PROJECT_ENABLED, false);
         switchProject.setChecked(projectEnabled);
@@ -161,6 +197,8 @@ public class MainActivity extends AppCompatActivity {
                 .putBoolean(KEY_PROJECT_ENABLED, switchProject.isChecked())
                 .putString(KEY_PROJECT_NAME, switchProject.isChecked() ? String.valueOf(editProjectName.getText()) : "")
                 .apply();
+        savedApiKey = String.valueOf(editApiKey.getText());
+        txtApiKeyWarning.setVisibility(android.view.View.GONE);
         Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
         fetchAndDisplayUser();
     }
