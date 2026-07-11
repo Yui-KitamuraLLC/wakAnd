@@ -32,6 +32,7 @@ public class WakaTimeClient {
     private static final String DEFAULT_API_URL = "https://wakatime.com/api/v1";
     private static final String DEFAULT_PROJECT_NAME = "Unknown Project";
     private static final long HEARTBEAT_INTERVAL_MS = 120_000;
+    private static final String USER_AGENT = "wakatime/unset (Android-" + Build.VERSION.RELEASE + ") wakAnd/" + BuildConfig.VERSION_NAME;
 
     private final Context context;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -82,9 +83,6 @@ public class WakaTimeClient {
                 heartbeat.put("type", isUrl ? "url" : "app");
                 heartbeat.put("time", unixTime);
                 heartbeat.put("project", projectOverride != null ? projectOverride : getProjectName());
-                heartbeat.put("language", "Android");
-                heartbeat.put("operating_system", "Android " + Build.VERSION.RELEASE);
-                heartbeat.put("machine", Build.MANUFACTURER + " " + Build.MODEL);
 
                 JSONArray heartbeats = new JSONArray();
                 heartbeats.put(heartbeat);
@@ -96,7 +94,7 @@ public class WakaTimeClient {
                 conn.setRequestProperty("Content-Type", "application/json");
                 String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
                 conn.setRequestProperty("Authorization", "Basic " + encoded);
-                conn.setRequestProperty("User-Agent", "wakAnd/1.0 android-wakatime");
+                conn.setRequestProperty("User-Agent", USER_AGENT);
                 conn.setDoOutput(true);
                 conn.setConnectTimeout(30_000);
                 conn.setReadTimeout(30_000);
@@ -155,7 +153,7 @@ public class WakaTimeClient {
                 conn.setRequestMethod("GET");
                 String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
                 conn.setRequestProperty("Authorization", "Basic " + encoded);
-                conn.setRequestProperty("User-Agent", "wakAnd/1.0 android-wakatime");
+                conn.setRequestProperty("User-Agent", USER_AGENT);
                 conn.setConnectTimeout(15_000);
                 conn.setReadTimeout(15_000);
 
@@ -207,7 +205,7 @@ public class WakaTimeClient {
                 conn.setRequestMethod("GET");
                 String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
                 conn.setRequestProperty("Authorization", "Basic " + encoded);
-                conn.setRequestProperty("User-Agent", "wakAnd/1.0 android-wakatime");
+                conn.setRequestProperty("User-Agent", USER_AGENT);
                 conn.setConnectTimeout(15_000);
                 conn.setReadTimeout(15_000);
 
