@@ -35,5 +35,5 @@
     <string name="new_project">+ 新規プロジェクト</string>
     <string name="hint_new_project_name">新規プロジェクト名</string>
     <string name="label_not_tracked">計測対象外</string>
-    <string name="label_silent_notification">常時サイレント通知</string>
+    <string name="label_silent_notification">計測状況を通知欄に表示する</string>
 </resources>
