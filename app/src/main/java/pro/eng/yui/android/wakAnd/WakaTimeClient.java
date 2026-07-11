@@ -48,7 +48,8 @@ public class WakaTimeClient {
         } catch (Exception e) {
             version = "unknown";
         }
-        this.userAgent = "wakatime/unknown (Android-"+ Build.VERSION.RELEASE +"-unknown) "+ Build.MODEL +" wakAnd/" + version;
+        String javaVersion = System.getProperty("java.specification.version", "unknown");
+        this.userAgent = "wakatime/1.0.0 (android-" + Build.VERSION.RELEASE + ") Java/" + javaVersion + " wakAnd/" + version;
     }
 
     public void sendHeartbeat(String entity) {
@@ -103,6 +104,7 @@ public class WakaTimeClient {
                 String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
                 conn.setRequestProperty("Authorization", "Basic " + encoded);
                 conn.setRequestProperty("User-Agent", userAgent);
+                conn.setRequestProperty("X-Machine-Name", Build.MODEL);
                 conn.setDoOutput(true);
                 conn.setConnectTimeout(30_000);
                 conn.setReadTimeout(30_000);
@@ -162,6 +164,7 @@ public class WakaTimeClient {
                 String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
                 conn.setRequestProperty("Authorization", "Basic " + encoded);
                 conn.setRequestProperty("User-Agent", userAgent);
+                conn.setRequestProperty("X-Machine-Name", Build.MODEL);
                 conn.setConnectTimeout(15_000);
                 conn.setReadTimeout(15_000);
 
@@ -214,6 +217,7 @@ public class WakaTimeClient {
                 String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
                 conn.setRequestProperty("Authorization", "Basic " + encoded);
                 conn.setRequestProperty("User-Agent", userAgent);
+                conn.setRequestProperty("X-Machine-Name", Build.MODEL);
                 conn.setConnectTimeout(15_000);
                 conn.setReadTimeout(15_000);
 
