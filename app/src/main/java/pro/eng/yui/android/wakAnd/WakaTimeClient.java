@@ -48,7 +48,7 @@ public class WakaTimeClient {
         } catch (Exception e) {
             version = "unknown";
         }
-        this.userAgent = "wakatime/unset (Android-" + Build.VERSION.RELEASE + ") wakAnd/" + version;
+        this.userAgent = "wakatime/unset (Android-"+ Build.VERSION.RELEASE +"-"+ Build.MODEL +") wakAnd " + version;
     }
 
     public void sendHeartbeat(String entity) {
