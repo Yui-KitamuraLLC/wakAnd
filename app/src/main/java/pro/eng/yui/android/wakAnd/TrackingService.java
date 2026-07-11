@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 
+import android.net.Uri;
+
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -41,9 +43,11 @@ public class TrackingService extends Service {
             String url = isBrowser ? ChromeUrlAccessibilityService.getLastUrl() : null;
             String content;
             if (isTrackedApp(appName)) {
-                content = appName;
                 if (isBrowser && url != null && !url.isEmpty()) {
-                    content += " | " + url;
+                    String host = Uri.parse(url).getHost();
+                    content = appName + "(" + (host != null ? host : url) + ")";
+                } else {
+                    content = appName;
                 }
             } else {
                 content = getString(R.string.label_not_tracked);
