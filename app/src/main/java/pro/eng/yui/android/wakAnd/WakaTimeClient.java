@@ -90,6 +90,7 @@ public class WakaTimeClient {
                 heartbeat.put("type", isUrl ? "url" : "app");
                 heartbeat.put("time", unixTime);
                 heartbeat.put("project", projectOverride != null ? projectOverride : getProjectName());
+                heartbeat.put("user_agent", userAgent);
 
                 JSONArray heartbeats = new JSONArray();
                 heartbeats.put(heartbeat);
