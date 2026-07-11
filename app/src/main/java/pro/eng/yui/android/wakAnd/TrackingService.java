@@ -138,7 +138,7 @@ public class TrackingService extends Service {
             project = setting.projectName;
         }
 
-        wakaTimeClient.sendHeartbeat(entity, project);
+        wakaTimeClient.sendHeartbeat(entity, project, isBrowsing);
     }
 
     private boolean isTrackedApp(String appName) {

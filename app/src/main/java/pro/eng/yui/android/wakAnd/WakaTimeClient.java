@@ -44,10 +44,14 @@ public class WakaTimeClient {
     }
 
     public void sendHeartbeat(String entity) {
-        sendHeartbeat(entity, null);
+        sendHeartbeat(entity, null, false);
     }
 
     public void sendHeartbeat(String entity, String projectOverride) {
+        sendHeartbeat(entity, projectOverride, false);
+    }
+
+    public void sendHeartbeat(String entity, String projectOverride, boolean isUrl) {
         if (entity == null || entity.isEmpty()) {
             return;
         }
@@ -75,7 +79,7 @@ public class WakaTimeClient {
             try {
                 JSONObject heartbeat = new JSONObject();
                 heartbeat.put("entity", entity);
-                heartbeat.put("type", "app");
+                heartbeat.put("type", isUrl ? "url" : "app");
                 heartbeat.put("time", unixTime);
                 heartbeat.put("project", projectOverride != null ? projectOverride : getProjectName());
                 heartbeat.put("language", "Android");
