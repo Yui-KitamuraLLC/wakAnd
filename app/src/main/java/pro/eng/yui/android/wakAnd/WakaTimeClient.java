@@ -49,7 +49,8 @@ public class WakaTimeClient {
             version = "unknown";
         }
         String javaVersion = System.getProperty("java.specification.version", "unknown");
-        this.userAgent = "wakatime/1.0.0 (android-" + Build.VERSION.RELEASE + ") Java/" + javaVersion + " wakAnd/" + version;
+        this.userAgent = "wakatime/1.0.0 (Android-linux)" +
+                " Java/" + javaVersion + " wakAnd/" + version + " wakAnd-wakatime/" + version;
     }
 
     public void sendHeartbeat(String entity) {
