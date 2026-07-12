@@ -7,15 +7,27 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.List;
 
-public class ChromeUrlAccessibilityService extends AccessibilityService {
-
-    private static final String CHROME_PACKAGE = "com.android.chrome";
-    private static final String URL_BAR_ID = "com.android.chrome:id/url_bar";
+public class BrowserUrlAccessibilityService extends AccessibilityService {
 
     private static volatile String lastUrl = "";
+    private static volatile String lastBrowserPackage = "";
 
     public static String getLastUrl() {
         return lastUrl;
+    }
+
+    public static String getLastBrowserPackage() {
+        return lastBrowserPackage;
+    }
+
+    /**
+     * Reset URL when switching away from a browser.
+     */
+    public static void clearIfNotBrowser(String packageName) {
+        if (!BrowserConfig.isBrowser(packageName)) {
+            lastUrl = "";
+            lastBrowserPackage = "";
+        }
     }
 
     @Override
@@ -25,21 +37,32 @@ public class ChromeUrlAccessibilityService extends AccessibilityService {
         }
 
         String packageName = event.getPackageName().toString();
-        if (!CHROME_PACKAGE.equals(packageName)) {
+        if (!BrowserConfig.isBrowser(packageName)) {
             return;
         }
+
+        lastBrowserPackage = packageName;
 
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) {
             return;
         }
 
-        List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByViewId(URL_BAR_ID);
+        String urlBarId = BrowserConfig.getUrlBarId(packageName);
+        if (urlBarId == null) {
+            root.recycle();
+            return;
+        }
+
+        List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByViewId(urlBarId);
         if (nodes != null && !nodes.isEmpty()) {
             AccessibilityNodeInfo urlNode = nodes.get(0);
             if (urlNode.getText() != null) {
                 lastUrl = urlNode.getText().toString();
             }
+        } else {
+            // URL bar not found (e.g. incognito mode) — clear URL
+            lastUrl = "";
         }
         root.recycle();
     }
@@ -56,7 +79,7 @@ public class ChromeUrlAccessibilityService extends AccessibilityService {
         info.eventTypes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 | AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        info.packageNames = new String[]{CHROME_PACKAGE};
+        info.packageNames = BrowserConfig.getAllPackages();
         info.notificationTimeout = 300;
         setServiceInfo(info);
     }

@@ -32,15 +32,14 @@ public class TrackingService extends Service {
     private AppSettingsManager appSettingsManager;
     private String lastNotificationText = "";
 
-    private static final String CHROME_PACKAGE = "com.android.chrome";
-
     private final Runnable pollRunnable = new Runnable() {
         @Override
         public void run() {
             String packageName = getCurrentPackageName();
             String appName = AppUtil.getAppLabel(getPackageManager(), packageName);
-            boolean isBrowser = CHROME_PACKAGE.equals(packageName);
-            String url = isBrowser ? ChromeUrlAccessibilityService.getLastUrl() : null;
+            boolean isBrowser = BrowserConfig.isBrowser(packageName);
+            BrowserUrlAccessibilityService.clearIfNotBrowser(packageName);
+            String url = isBrowser ? BrowserUrlAccessibilityService.getLastUrl() : null;
             String content;
             if (isTrackedApp(appName)) {
                 if (isBrowser && url != null && !url.isEmpty()) {
@@ -56,7 +55,7 @@ public class TrackingService extends Service {
                 updateNotification(content);
                 lastNotificationText = content;
             }
-            sendHeartbeat(appName, url);
+            sendHeartbeat(appName, url, isBrowser);
             handler.postDelayed(this, POLL_INTERVAL_MS);
         }
     };
@@ -127,11 +126,19 @@ public class TrackingService extends Service {
         return false;
     }
 
-    private void sendHeartbeat(String appName, String url) {
+    private void sendHeartbeat(String appName, String url, boolean isBrowser) {
         if (wakaTimeClient == null) return;
 
-        boolean isBrowsing = url != null && !url.isEmpty();
-        String entity = isBrowsing ? url : appName;
+        boolean hasUrl = url != null && !url.isEmpty();
+        String entity;
+        boolean isUrl;
+        if (isBrowser && hasUrl) {
+            entity = url;
+            isUrl = true;
+        } else {
+            entity = appName;
+            isUrl = false;
+        }
         String project = null;
 
         if (appSettingsManager.hasAnySettings()) {
@@ -142,7 +149,7 @@ public class TrackingService extends Service {
             project = setting.projectName;
         }
 
-        wakaTimeClient.sendHeartbeat(entity, project, isBrowsing);
+        wakaTimeClient.sendHeartbeat(entity, project, isUrl);
     }
 
     private boolean isTrackedApp(String appName) {
