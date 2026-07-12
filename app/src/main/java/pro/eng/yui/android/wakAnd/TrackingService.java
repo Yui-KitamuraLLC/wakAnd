@@ -5,7 +5,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.app.usage.UsageStats;
+import android.app.usage.UsageEvents;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
@@ -42,9 +42,13 @@ public class TrackingService extends Service {
             String url = isBrowser ? BrowserUrlAccessibilityService.getLastUrl() : null;
             String content;
             if (isTrackedApp(appName)) {
-                if (isBrowser && url != null && !url.isEmpty()) {
-                    String host = Uri.parse(url).getHost();
-                    content = appName + "(" + (host != null ? host : url) + ")";
+                if (isBrowser) {
+                    if (url != null && !url.isEmpty()) {
+                        String host = Uri.parse(url).getHost();
+                        content = appName + "(" + (host != null ? host : url) + ")";
+                    } else {
+                        content = appName + "(" + getString(R.string.label_private_mode) + ")";
+                    }
                 } else {
                     content = appName;
                 }
@@ -172,17 +176,16 @@ public class TrackingService extends Service {
 
         UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
         long now = System.currentTimeMillis();
-        List<UsageStats> stats = usm.queryUsageStats(
-                UsageStatsManager.INTERVAL_DAILY, now - 60_000, now);
+        UsageEvents events = usm.queryEvents(now - 300_000, now);
+        UsageEvents.Event event = new UsageEvents.Event();
+        String lastPackageName = "";
 
-        if (stats == null || stats.isEmpty()) {
-            return "";
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event);
+            if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                lastPackageName = event.getPackageName();
+            }
         }
-
-        SortedMap<Long, UsageStats> sorted = new TreeMap<>();
-        for (UsageStats s : stats) {
-            sorted.put(s.getLastTimeUsed(), s);
-        }
-        return sorted.get(sorted.lastKey()).getPackageName();
+        return lastPackageName;
     }
 }
