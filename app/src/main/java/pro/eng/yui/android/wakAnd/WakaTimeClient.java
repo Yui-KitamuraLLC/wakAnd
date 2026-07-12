@@ -29,7 +29,13 @@ public class WakaTimeClient {
     private static final String KEY_API_KEY = "api_key";
     private static final String KEY_API_URL = "api_url";
     private static final String KEY_PROJECT_NAME = "project_name";
-    private static final String DEFAULT_API_URL = "https://wakatime.com/api/v1";
+    private static final String DEFAULT_HOST = "https://wakatime.com";
+    private static final String DEFAULT_API_PATH = "/api/v1";
+    private static final String DEFAULT_API_URL = DEFAULT_HOST + DEFAULT_API_PATH;
+
+    public static String getDefaultApiUrl() {
+        return DEFAULT_API_URL;
+    }
     private static final String DEFAULT_PROJECT_NAME = "Unknown Project";
     private static final long HEARTBEAT_INTERVAL_MS = 120_000;
 
@@ -199,13 +205,13 @@ public class WakaTimeClient {
     }
 
     public interface UserCallback {
-        void onResult(String displayName, String dashboardUrl);
+        void onResult(String displayName, String dashboardUrl, String profileUrl);
     }
 
     public void fetchCurrentUser(UserCallback callback) {
         String apiKey = getApiKey();
         if (apiKey == null || apiKey.isEmpty()) {
-            callback.onResult(null, null);
+            callback.onResult(null, null, null);
             return;
         }
 
@@ -234,16 +240,19 @@ public class WakaTimeClient {
                     JSONObject json = new JSONObject(sb.toString());
                     JSONObject data = json.getJSONObject("data");
                     String displayName = data.optString("display_name", data.optString("username", ""));
-                    String dashboardUrl = getApiUrl().replace("/api/v1", "") + "/dashboard";
-                    callback.onResult(displayName, dashboardUrl);
+                    String host = getApiUrl().replace(DEFAULT_API_PATH, "");
+                    String dashboardUrl = host + "/dashboard";
+                    String userId = data.optString("id", "");
+                    String profileUrl = userId.isEmpty() ? null : host + "/@" + userId;
+                    callback.onResult(displayName, dashboardUrl, profileUrl);
                 } else {
                     Log.w(TAG, "fetchCurrentUser failed: HTTP " + code);
-                    callback.onResult(null, null);
+                    callback.onResult(null, null, null);
                 }
                 conn.disconnect();
             } catch (Exception e) {
                 Log.e(TAG, "Failed to fetch current user", e);
-                callback.onResult(null, null);
+                callback.onResult(null, null, null);
             }
         });
     }

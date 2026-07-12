@@ -132,15 +132,24 @@ public class MainActivity extends AppCompatActivity {
         savedApiKey = prefs.getString(KEY_API_KEY, "");
         editApiKey.setText(savedApiKey);
         txtApiKeyWarning.setVisibility(android.view.View.GONE);
-        editApiUrl.setText(prefs.getString(KEY_API_URL, "https://wakatime.com/api/v1"));
+        editApiUrl.setText(prefs.getString(KEY_API_URL, WakaTimeClient.getDefaultApiUrl()));
         fetchAndDisplayUser();
     }
 
     private void fetchAndDisplayUser() {
         WakaTimeClient client = new WakaTimeClient(this);
-        client.fetchCurrentUser((displayName, dashboardUrl) -> runOnUiThread(() -> {
+        client.fetchCurrentUser((displayName, dashboardUrl, profileUrl) -> runOnUiThread(() -> {
             if (displayName != null && !displayName.isEmpty()) {
                 txtUserName.setText(displayName);
+                if (profileUrl != null) {
+                    txtUserName.setOnClickListener(v -> {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(profileUrl));
+                        startActivity(intent);
+                    });
+                } else {
+                    txtUserName.setOnClickListener(null);
+                    txtUserName.setClickable(false);
+                }
                 txtDashboardLink.setVisibility(android.view.View.VISIBLE);
                 txtDashboardLink.setOnClickListener(v -> {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(dashboardUrl));
@@ -148,6 +157,8 @@ public class MainActivity extends AppCompatActivity {
                 });
             } else {
                 txtUserName.setText(R.string.user_not_linked);
+                txtUserName.setOnClickListener(null);
+                txtUserName.setClickable(false);
                 txtDashboardLink.setVisibility(android.view.View.GONE);
             }
             client.shutdown();
