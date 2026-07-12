@@ -44,8 +44,17 @@ public class TrackingService extends Service {
             if (isTrackedApp(appName)) {
                 if (isBrowser) {
                     if (url != null && !url.isEmpty()) {
-                        String host = Uri.parse(url).getHost();
-                        content = appName + "(" + (host != null ? host : url) + ")";
+                        String displayUrl = url;
+                        try {
+                            if (!url.contains("://") && !url.startsWith("http")) {
+                                displayUrl = "https://" + url;
+                            }
+                            Uri uri = Uri.parse(displayUrl);
+                            String host = uri.getHost();
+                            content = appName + "(" + (host != null ? host : url) + ")";
+                        } catch (Exception e) {
+                            content = appName + "(" + url + ")";
+                        }
                     } else {
                         content = appName + "(" + getString(R.string.label_private_mode) + ")";
                     }
@@ -55,6 +64,9 @@ public class TrackingService extends Service {
             } else {
                 content = getString(R.string.label_not_tracked);
             }
+
+            // Force update if browser URL might have changed but content string is same
+            // (though with host in content, it should change)
             if (!content.equals(lastNotificationText) || !isNotificationActive()) {
                 updateNotification(content);
                 lastNotificationText = content;
