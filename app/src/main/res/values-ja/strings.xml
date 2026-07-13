@@ -37,4 +37,5 @@
     <string name="label_not_tracked">計測対象外</string>
     <string name="label_private_mode">取得禁止</string>
     <string name="label_silent_notification">計測状況を通知欄に表示する</string>
+    <string name="label_permission_denied">権限不足</string>
 </resources>

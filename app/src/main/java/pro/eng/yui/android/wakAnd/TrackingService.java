@@ -43,7 +43,9 @@ public class TrackingService extends Service {
             String content;
             if (isTrackedApp(appName)) {
                 if (isBrowser) {
-                    if (url != null && !url.isEmpty()) {
+                    if (!AppUtil.isAccessibilityServiceEnabled(TrackingService.this, BrowserUrlAccessibilityService.class)) {
+                        content = appName + "(" + getString(R.string.label_permission_denied) + ")";
+                    } else if (url != null && !url.isEmpty()) {
                         String displayUrl = url;
                         try {
                             if (!url.contains("://") && !url.startsWith("http")) {
