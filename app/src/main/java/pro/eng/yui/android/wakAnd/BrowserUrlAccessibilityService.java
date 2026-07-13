@@ -58,16 +58,27 @@ public class BrowserUrlAccessibilityService extends AccessibilityService {
 
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) {
+            root = event.getSource();
+        }
+        if (root == null) {
             return;
         }
 
         String urlBarId = BrowserConfig.getUrlBarId(packageName);
         if (urlBarId == null) {
-            root.recycle();
+            if (root != event.getSource()) root.recycle();
             return;
         }
 
         List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByViewId(urlBarId);
+        // Fallback for Chrome if primary ID fails
+        if ((nodes == null || nodes.isEmpty()) && "com.android.chrome".equals(packageName)) {
+            nodes = root.findAccessibilityNodeInfosByViewId("com.android.chrome:id/location_bar_edit_text");
+            if (nodes == null || nodes.isEmpty()) {
+                nodes = root.findAccessibilityNodeInfosByViewId("com.android.chrome:id/url_edit_text");
+            }
+        }
+
         if (nodes != null && !nodes.isEmpty()) {
             AccessibilityNodeInfo urlNode = nodes.get(0);
             if (urlNode.getText() != null) {
@@ -84,11 +95,17 @@ public class BrowserUrlAccessibilityService extends AccessibilityService {
                 }
             }
             urlNode.recycle();
+            // Also recycle other nodes if list has more
+            for (int i = 1; i < nodes.size(); i++) {
+                nodes.get(i).recycle();
+            }
         } else {
             // URL bar not found (e.g. incognito mode) — clear URL
             lastUrl = "";
         }
-        root.recycle();
+        if (root != event.getSource()) {
+            root.recycle();
+        }
     }
 
     @Override
