@@ -31,10 +31,12 @@ public class TrackingService extends Service {
     private WakaTimeClient wakaTimeClient;
     private AppSettingsManager appSettingsManager;
     private String lastNotificationText = "";
+    private Context localizedContext;
 
     private final Runnable pollRunnable = new Runnable() {
         @Override
         public void run() {
+            localizedContext = AppUtil.getLocalizedContext(TrackingService.this);
             String packageName = getCurrentPackageName();
             String appName = AppUtil.getAppLabel(getPackageManager(), packageName);
             boolean isBrowser = BrowserConfig.isBrowser(packageName);
@@ -44,7 +46,7 @@ public class TrackingService extends Service {
             if (isTrackedApp(appName)) {
                 if (isBrowser) {
                     if (!AppUtil.isAccessibilityServiceEnabled(TrackingService.this, BrowserUrlAccessibilityService.class)) {
-                        content = appName + "(" + getString(R.string.label_permission_denied) + ")";
+                        content = appName + "(" + localizedContext.getString(R.string.label_permission_denied) + ")";
                     } else if (url != null && !url.isEmpty()) {
                         String displayUrl = url;
                         try {
@@ -58,13 +60,13 @@ public class TrackingService extends Service {
                             content = appName + "(" + url + ")";
                         }
                     } else {
-                        content = appName + "(" + getString(R.string.label_private_mode) + ")";
+                        content = appName + "(" + localizedContext.getString(R.string.label_private_mode) + ")";
                     }
                 } else {
                     content = appName;
                 }
             } else {
-                content = getString(R.string.label_not_tracked);
+                content = localizedContext.getString(R.string.label_not_tracked);
             }
 
             // Force update if browser URL might have changed but content string is same
@@ -89,6 +91,7 @@ public class TrackingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        localizedContext = AppUtil.getLocalizedContext(this);
         SharedPreferences prefs = getSharedPreferences("wakand_prefs", MODE_PRIVATE);
         if (!prefs.getBoolean(MainActivity.KEY_SILENT_NOTIFICATION, true)) {
             stopSelf();
@@ -115,9 +118,10 @@ public class TrackingService extends Service {
     }
 
     private void createNotificationChannel() {
+        if (localizedContext == null) localizedContext = AppUtil.getLocalizedContext(this);
         NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Tracking", NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("Shows the currently active app");
+                CHANNEL_ID, localizedContext.getString(R.string.section_tracking), NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription(localizedContext.getString(R.string.label_silent_notification));
         channel.setShowBadge(false);
         notificationManager.createNotificationChannel(channel);
     }
