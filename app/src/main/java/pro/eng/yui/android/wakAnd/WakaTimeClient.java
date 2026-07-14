@@ -59,14 +59,6 @@ public class WakaTimeClient {
                 " Java/" + javaVersion + " wakAnd/" + version + " wakAnd-wakatime/" + version;
     }
 
-    public void sendHeartbeat(String entity) {
-        sendHeartbeat(entity, null, false);
-    }
-
-    public void sendHeartbeat(String entity, String projectOverride) {
-        sendHeartbeat(entity, projectOverride, false);
-    }
-
     public void sendHeartbeat(String entity, String projectOverride, boolean isUrl) {
         if (entity == null || entity.isEmpty()) {
             return;
@@ -122,7 +114,7 @@ public class WakaTimeClient {
                 }
 
                 int responseCode = conn.getResponseCode();
-                if (responseCode == 201 || responseCode == 202) {
+                if (responseCode == HttpURLConnection.HTTP_CREATED || responseCode == HttpURLConnection.HTTP_ACCEPTED) {
                     Log.d(TAG, "Heartbeat sent: " + entity);
                 } else {
                     Log.w(TAG, "Heartbeat failed: HTTP " + responseCode);
@@ -142,13 +134,13 @@ public class WakaTimeClient {
     private String getApiUrl() {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String url = prefs.getString(KEY_API_URL, DEFAULT_API_URL);
-        return (url == null || url.isEmpty()) ? DEFAULT_API_URL : url;
+        return (url.isEmpty() == false) ? url : DEFAULT_API_URL;
     }
 
     private String getProjectName() {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String name = prefs.getString(KEY_PROJECT_NAME, DEFAULT_PROJECT_NAME);
-        return (name == null || name.isEmpty()) ? DEFAULT_PROJECT_NAME : name;
+        return (name.isEmpty() == false) ? name : DEFAULT_PROJECT_NAME;
     }
 
     public interface ProjectsCallback {
@@ -176,7 +168,7 @@ public class WakaTimeClient {
                 conn.setReadTimeout(15_000);
 
                 int code = conn.getResponseCode();
-                if (code == 200) {
+                if (code == HttpURLConnection.HTTP_OK) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
                     StringBuilder sb = new StringBuilder();
                     String line;
@@ -190,7 +182,7 @@ public class WakaTimeClient {
                     for (int i = 0; i < data.length(); i++) {
                         names.add(data.getJSONObject(i).getString("name"));
                     }
-                    Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
+                    names.sort(String.CASE_INSENSITIVE_ORDER);
                     callback.onResult(names);
                 } else {
                     Log.w(TAG, "fetchProjects failed: HTTP " + code);
@@ -229,7 +221,7 @@ public class WakaTimeClient {
                 conn.setReadTimeout(15_000);
 
                 int code = conn.getResponseCode();
-                if (code == 200) {
+                if (code == HttpURLConnection.HTTP_OK) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
                     StringBuilder sb = new StringBuilder();
                     String line;
