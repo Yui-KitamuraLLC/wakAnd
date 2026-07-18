@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -245,6 +246,82 @@ public class WakaTimeClient {
             } catch (Exception e) {
                 Log.e(TAG, "Failed to fetch current user", e);
                 callback.onResult(null, null, null);
+            }
+        });
+    }
+
+    public interface ExternalDurationCallback {
+        void onResult(boolean success, String message);
+    }
+
+    /**
+     * Manually logs an offline / non-digital activity to WakaTime via the external_durations API.
+     * See https://wakatime.com/developers#external_durations
+     *
+     * @param project  existing project name to attribute the time to
+     * @param category WakaTime category value (e.g. "communicating", "designing")
+     * @param meta     free-form note synced to WakaTime (may be empty)
+     * @param startSec start time as a UNIX epoch in seconds
+     * @param endSec   end time as a UNIX epoch in seconds
+     */
+    public void sendExternalDuration(String project, String category, String meta,
+                                     double startSec, double endSec, ExternalDurationCallback callback) {
+        String apiKey = getApiKey();
+        if (apiKey == null || apiKey.isEmpty()) {
+            callback.onResult(false, "no_api_key");
+            return;
+        }
+
+        executor.execute(() -> {
+            try {
+                String entity = (meta != null && !meta.isEmpty()) ? meta : category;
+
+                JSONObject body = new JSONObject();
+                body.put("external_id", UUID.randomUUID().toString());
+                body.put("entity", entity);
+                body.put("type", "app");
+                body.put("category", category);
+                body.put("start_time", startSec);
+                body.put("end_time", endSec);
+                body.put("project", project);
+                if (meta != null && !meta.isEmpty()) {
+                    body.put("meta", meta);
+                }
+                body.put("user_agent", userAgent);
+
+                String urlStr = getApiUrl() + "/users/current/external_durations";
+                URL url = new URL(urlStr);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                String encoded = Base64.getEncoder().encodeToString(apiKey.getBytes(StandardCharsets.UTF_8));
+                conn.setRequestProperty("Authorization", "Basic " + encoded);
+                conn.setRequestProperty("User-Agent", userAgent);
+                conn.setRequestProperty("X-Machine-Name", Build.MODEL);
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(30_000);
+                conn.setReadTimeout(30_000);
+
+                byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload);
+                }
+
+                int code = conn.getResponseCode();
+                boolean ok = code == HttpURLConnection.HTTP_OK
+                        || code == HttpURLConnection.HTTP_CREATED
+                        || code == HttpURLConnection.HTTP_ACCEPTED;
+                if (ok) {
+                    Log.d(TAG, "External duration sent: " + entity);
+                    callback.onResult(true, null);
+                } else {
+                    Log.w(TAG, "External duration failed: HTTP " + code);
+                    callback.onResult(false, "HTTP " + code);
+                }
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to send external duration", e);
+                callback.onResult(false, e.getMessage());
             }
         });
     }

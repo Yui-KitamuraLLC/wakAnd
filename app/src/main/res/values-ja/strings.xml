@@ -38,4 +38,31 @@
     <string name="label_private_mode">取得禁止</string>
     <string name="label_silent_notification">計測状況を通知欄に表示する</string>
     <string name="label_permission_denied">権限不足</string>
+    <string name="btn_offline_time">オフライン時間の登録</string>
+    <string name="offline_time_title">オフライン時間の登録</string>
+    <string name="label_start_time">開始時刻</string>
+    <string name="label_end_time">終了時刻</string>
+    <string name="label_category">カテゴリ</string>
+    <string name="hint_meta">メモ（WakaTime連携・15文字まで）</string>
+    <string name="btn_submit">送信</string>
+    <string name="quick_10m">10分</string>
+    <string name="quick_30m">30分</string>
+    <string name="quick_45m">45分</string>
+    <string name="quick_1h">1時間</string>
+    <string name="confirm_submit_offline">この内容でWakaTimeに登録しますか？</string>
+    <string name="offline_submit_success">登録しました</string>
+    <string name="offline_submit_failed">登録に失敗しました</string>
+    <string name="offline_invalid_time">時刻が不正です（開始が終了より前になるようにしてください）</string>
+    <string name="offline_no_project">プロジェクトを選択してください</string>
+    <string name="offline_no_api_key">APIキーが設定されていません</string>
+    <string name="time_separator">:</string>
+    <string-array name="offline_category_labels">
+        <item>会議・コミュニケーション</item>
+        <item>ブレスト・デザイン</item>
+        <item>リサーチ</item>
+        <item>学習</item>
+        <item>ドキュメント作成</item>
+        <item>レビュー</item>
+        <item>メモ</item>
+    </string-array>
 </resources>

@@ -38,4 +38,40 @@
     <string name="label_private_mode">Restricted</string>
     <string name="label_silent_notification">Show tracking status in notification bar</string>
     <string name="label_permission_denied">Permission denied</string>
+    <string name="btn_offline_time">Log Offline Time</string>
+    <string name="offline_time_title">Log Offline Time</string>
+    <string name="label_start_time">Start Time</string>
+    <string name="label_end_time">End Time</string>
+    <string name="label_category">Category</string>
+    <string name="hint_meta">Note (synced to WakaTime, max 15)</string>
+    <string name="btn_submit">Submit</string>
+    <string name="quick_10m">10 min</string>
+    <string name="quick_30m">30 min</string>
+    <string name="quick_45m">45 min</string>
+    <string name="quick_1h">1 hour</string>
+    <string name="confirm_submit_offline">Log this entry to WakaTime?</string>
+    <string name="offline_submit_success">Logged successfully</string>
+    <string name="offline_submit_failed">Failed to log</string>
+    <string name="offline_invalid_time">Invalid time (start must be before end)</string>
+    <string name="offline_no_project">Please select a project</string>
+    <string name="offline_no_api_key">API key is not configured</string>
+    <string name="time_separator">:</string>
+    <string-array name="offline_category_labels">
+        <item>Communicating</item>
+        <item>Designing</item>
+        <item>Researching</item>
+        <item>Learning</item>
+        <item>Writing Docs</item>
+        <item>Code Reviewing</item>
+        <item>Notes</item>
+    </string-array>
+    <string-array name="offline_category_values">
+        <item>communicating</item>
+        <item>designing</item>
+        <item>researching</item>
+        <item>learning</item>
+        <item>writing docs</item>
+        <item>code reviewing</item>
+        <item>notes</item>
+    </string-array>
 </resources>

@@ -35,6 +35,10 @@
                 android:name=".AppListActivity"
                 android:exported="false" />
 
+        <activity
+                android:name=".OfflineTimeActivity"
+                android:exported="false" />
+
         <service
                 android:name=".TrackingService"
                 android:foregroundServiceType="specialUse"

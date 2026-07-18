@@ -134,6 +134,22 @@
             android:layout_marginBottom="8dp" />
 
         <Button
+            android:id="@+id/btnOfflineTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_offline_time"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Settings -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_settings"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <Button
             android:id="@+id/btnGrantUsageAccess"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -145,15 +161,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/btn_enable_accessibility"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Settings -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/section_settings"
-            android:textSize="18sp"
-            android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
         <Button

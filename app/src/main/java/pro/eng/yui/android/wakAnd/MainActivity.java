@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         Button btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
         Button btnLang = findViewById(R.id.btnLang);
         Button btnAppList = findViewById(R.id.btnAppList);
+        Button btnOfflineTime = findViewById(R.id.btnOfflineTime);
 
         loadSettings();
 
@@ -110,6 +111,8 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         btnAppList.setOnClickListener(v ->
                 startActivity(new Intent(this, AppListActivity.class)));
+        btnOfflineTime.setOnClickListener(v ->
+                startActivity(new Intent(this, OfflineTimeActivity.class)));
         btnLang.setOnClickListener(v -> toggleLanguage());
 
         SwitchMaterial switchSilent = findViewById(R.id.switchSilentNotification);
