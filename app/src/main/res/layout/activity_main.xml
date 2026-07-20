@@ -156,6 +156,13 @@
             android:text="@string/btn_grant_usage_access"
             android:layout_marginBottom="8dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_accessibility_note"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp" />
+
         <Button
             android:id="@+id/btnEnableAccessibility"
             android:layout_width="match_parent"
