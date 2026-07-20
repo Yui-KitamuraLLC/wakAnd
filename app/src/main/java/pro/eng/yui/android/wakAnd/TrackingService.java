@@ -10,15 +10,13 @@ import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 
 import android.net.Uri;
-
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 public class TrackingService extends Service {
 
@@ -98,7 +96,11 @@ public class TrackingService extends Service {
             return START_NOT_STICKY;
         }
         Notification notification = buildNotification("Tracking...");
-        startForeground(NOTIFICATION_ID, notification);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
         handler.post(pollRunnable);
         return START_STICKY;
     }
@@ -136,7 +138,12 @@ public class TrackingService extends Service {
     }
 
     private void updateNotification(String text) {
-        startForeground(NOTIFICATION_ID, buildNotification(text));
+        Notification notification = buildNotification(text);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
     }
 
     private boolean isNotificationActive() {
