@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -107,14 +109,18 @@ public class MainActivity extends AppCompatActivity {
         btnSave.setOnClickListener(v -> saveSettings());
         btnGrantUsageAccess.setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
-        btnEnableAccessibility.setOnClickListener(v ->
-                new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setTitle(R.string.accessibility_disclosure_title)
-                        .setMessage(R.string.accessibility_disclosure_message)
-                        .setPositiveButton(R.string.agree, (dialog, which) ->
-                                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
-                        .setNegativeButton(R.string.disagree, null)
-                        .show());
+        btnEnableAccessibility.setOnClickListener(v -> {
+            View titleView = LayoutInflater.from(this).inflate(R.layout.dialog_custom_title, null);
+            TextView titleText = titleView.findViewById(R.id.dialogTitle);
+            titleText.setText(R.string.accessibility_disclosure_title);
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setCustomTitle(titleView)
+                    .setMessage(R.string.accessibility_disclosure_message)
+                    .setPositiveButton(R.string.agree, (dialog, which) ->
+                            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+                    .setNegativeButton(R.string.disagree, null)
+                    .show();
+        });
         btnAppList.setOnClickListener(v ->
                 startActivity(new Intent(this, AppListActivity.class)));
         btnOfflineTime.setOnClickListener(v ->
