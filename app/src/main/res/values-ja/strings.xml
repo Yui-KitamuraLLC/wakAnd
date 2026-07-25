@@ -66,4 +66,8 @@
         <item>レビュー</item>
         <item>メモ</item>
     </string-array>
+    <string name="accessibility_disclosure_title">ユーザー補助サービスの使用について</string>
+    <string name="accessibility_disclosure_message">このアプリは、アクティビティ追跡のためにブラウザ（Chrome等）のURLを取得することを目的として、ユーザー補助サービスを使用します。この情報は追跡のみに使用され、他の目的には使用されません。必要な場合のみ同意してください。</string>
+    <string name="agree">同意する</string>
+    <string name="disagree">同意しない</string>
 </resources>

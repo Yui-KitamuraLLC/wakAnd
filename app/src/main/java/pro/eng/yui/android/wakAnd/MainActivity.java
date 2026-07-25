@@ -108,7 +108,13 @@ public class MainActivity extends AppCompatActivity {
         btnGrantUsageAccess.setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
         btnEnableAccessibility.setOnClickListener(v ->
-                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle(R.string.accessibility_disclosure_title)
+                        .setMessage(R.string.accessibility_disclosure_message)
+                        .setPositiveButton(R.string.agree, (dialog, which) ->
+                                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+                        .setNegativeButton(R.string.disagree, null)
+                        .show());
         btnAppList.setOnClickListener(v ->
                 startActivity(new Intent(this, AppListActivity.class)));
         btnOfflineTime.setOnClickListener(v ->
