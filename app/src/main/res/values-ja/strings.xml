@@ -67,7 +67,7 @@
         <item>メモ</item>
     </string-array>
     <string name="accessibility_disclosure_title">ユーザー補助サービス（Accessibility Service API）の使用に関する開示</string>
-    <string name="accessibility_disclosure_message">ブラウザ（Chrome等）の利用状況を追跡するため、このアプリはユーザー補助サービス API を使用して、現在表示しているウェブサイトのURLを取得する必要があります。\n\n• 収集する情報：ブラウザのURL\n• 使用目的：特定のウェブサイトでの滞在時間を記録し、WakaTimeと同期するため\n• データの扱い：この情報はアクティビティ追跡のみに使用され、他の目的や広告に使用されることはありません。\n\n同意すると次のシステム設定画面が開きます。そこで「wakAnd」を有効にしてください。同意しますか？</string>
+    <string name="accessibility_disclosure_message">「wakAnd」は、ブラウザの利用状況を追跡する機能を可能にするために、アプリの使用中、ブラウザのURLを収集します。\n\n• 収集する情報：ブラウザのURL\n• 使用目的：特定のウェブサイトでの滞在時間を記録し、WakaTimeと同期するため\n• データの扱い：この情報はアクティビティ追跡のみに使用され、他の目的や広告に使用されることはありません。\n\n同意すると次のシステム設定画面が開きます。そこで「wakAnd」を有効にしてください。同意しますか？</string>
     <string name="agree">同意する</string>
     <string name="disagree">同意しない</string>
 </resources>

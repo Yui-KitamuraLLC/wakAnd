@@ -76,7 +76,7 @@
         <item>notes</item>
     </string-array>
     <string name="accessibility_disclosure_title">Accessibility Service API Disclosure</string>
-    <string name="accessibility_disclosure_message">To track your activity while using browsers, this app needs to retrieve the URL of the website you are currently visiting using the Accessibility Service API.\n\n• Information Collected: Browser URLs\n• Purpose: To record your time spent on specific websites and sync with WakaTime.\n• Data Usage: This information is used ONLY for activity tracking and will not be shared or used for advertising.\n\nYou will need to manually enable the "wakAnd" service in the next system settings screen. Do you agree to allow this?</string>
+    <string name="accessibility_disclosure_message">"wakAnd" collects browser URLs while the app is in use to enable browser activity tracking.\n\n• Information Collected: Browser URLs\n• Purpose: To record your time spent on specific websites and sync with WakaTime.\n• Data Usage: This information is used ONLY for activity tracking and will not be shared or used for advertising.\n\nYou will need to manually enable the "wakAnd" service in the next system settings screen. Do you agree to allow this?</string>
     <string name="agree">Agree</string>
     <string name="disagree">Disagree</string>
 </resources>
