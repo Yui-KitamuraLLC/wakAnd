@@ -10,7 +10,7 @@ android {
         applicationId "pro.eng.yui.android.wakAnd"
         minSdk 26
         targetSdk 36
-        versionCode 17
+        versionCode 18
         versionName "1.3.6" 
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
