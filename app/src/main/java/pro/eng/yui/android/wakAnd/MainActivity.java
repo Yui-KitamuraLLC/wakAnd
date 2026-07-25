@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtApiKeyWarning;
     private String savedApiKey = "";
     private TextInputEditText editApiUrl;
+    private Button btnEnableAccessibility;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -70,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         editApiUrl = findViewById(R.id.editApiUrl);
         Button btnSave = findViewById(R.id.btnSave);
         Button btnGrantUsageAccess = findViewById(R.id.btnGrantUsageAccess);
-        Button btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
+        btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
         Button btnLang = findViewById(R.id.btnLang);
         Button btnAppList = findViewById(R.id.btnAppList);
         Button btnOfflineTime = findViewById(R.id.btnOfflineTime);
@@ -110,17 +111,26 @@ public class MainActivity extends AppCompatActivity {
         btnGrantUsageAccess.setOnClickListener(v ->
                 startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
         btnEnableAccessibility.setOnClickListener(v -> {
-            View titleView = LayoutInflater.from(this).inflate(R.layout.dialog_custom_title, null);
-            TextView titleText = titleView.findViewById(R.id.dialogTitle);
-            titleText.setText(R.string.accessibility_disclosure_title);
-            new androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setCustomTitle(titleView)
-                    .setMessage(R.string.accessibility_disclosure_message)
-                    .setCancelable(false)
-                    .setPositiveButton(R.string.agree, (dialog, which) ->
-                            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
-                    .setNegativeButton(R.string.disagree, null)
-                    .show();
+            if (isAccessibilityServiceEnabled()) {
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setMessage(R.string.disable_accessibility_message)
+                        .setPositiveButton(R.string.yes, (dialog, which) ->
+                                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+                        .setNegativeButton(R.string.no, null)
+                        .show();
+            } else {
+                View titleView = LayoutInflater.from(this).inflate(R.layout.dialog_custom_title, null);
+                TextView titleText = titleView.findViewById(R.id.dialogTitle);
+                titleText.setText(R.string.accessibility_disclosure_title);
+                new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setCustomTitle(titleView)
+                        .setMessage(R.string.accessibility_disclosure_message)
+                        .setCancelable(false)
+                        .setPositiveButton(R.string.agree, (dialog, which) ->
+                                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+                        .setNegativeButton(R.string.disagree, null)
+                        .show();
+            }
         });
         btnAppList.setOnClickListener(v ->
                 startActivity(new Intent(this, AppListActivity.class)));
@@ -142,6 +152,43 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateAccessibilityButtonText();
+    }
+
+    private void updateAccessibilityButtonText() {
+        if (isAccessibilityServiceEnabled()) {
+            btnEnableAccessibility.setText(R.string.btn_disable_accessibility);
+        } else {
+            btnEnableAccessibility.setText(R.string.btn_enable_accessibility);
+        }
+    }
+
+    private boolean isAccessibilityServiceEnabled() {
+        String service = getPackageName() + "/" + BrowserUrlAccessibilityService.class.getCanonicalName();
+        int accessibilityEnabled = 0;
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException ignored) {
+        }
+        android.text.TextUtils.SimpleStringSplitter colonSplitter = new android.text.TextUtils.SimpleStringSplitter(':');
+        if (accessibilityEnabled == 1) {
+            String settingValue = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (settingValue != null) {
+                colonSplitter.setString(settingValue);
+                while (colonSplitter.hasNext()) {
+                    String accessibilityService = colonSplitter.next();
+                    if (accessibilityService.equalsIgnoreCase(service)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
