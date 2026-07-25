@@ -116,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
             new androidx.appcompat.app.AlertDialog.Builder(this)
                     .setCustomTitle(titleView)
                     .setMessage(R.string.accessibility_disclosure_message)
+                    .setCancelable(false)
                     .setPositiveButton(R.string.agree, (dialog, which) ->
                             startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
                     .setNegativeButton(R.string.disagree, null)
