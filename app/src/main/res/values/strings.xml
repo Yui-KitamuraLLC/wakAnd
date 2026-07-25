@@ -8,6 +8,9 @@
     <string name="hint_project_name">Project Name</string>
     <string name="btn_save">Save</string>
     <string name="section_tracking">Tracking</string>
+    <string name="label_usage_access_note">(To track app usage)</string>
+    <string name="label_accessibility_api_note">(To track browser URLs)</string>
+    <string name="btn_accessibility_api">Allow AccessibilityAPI</string>
     <string name="btn_grant_usage_access">Grant Usage Access</string>
     <string name="btn_enable_accessibility">Enable Accessibility Service</string>
     <string name="btn_disable_accessibility">Disable Accessibility Service</string>

@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         if (isAccessibilityServiceEnabled()) {
             btnEnableAccessibility.setText(R.string.btn_disable_accessibility);
         } else {
-            btnEnableAccessibility.setText(R.string.btn_enable_accessibility);
+            btnEnableAccessibility.setText(R.string.btn_accessibility_api);
         }
     }
 

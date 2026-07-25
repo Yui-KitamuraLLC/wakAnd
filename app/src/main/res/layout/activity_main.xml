@@ -149,18 +149,26 @@
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_usage_access_note"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
         <Button
             android:id="@+id/btnGrantUsageAccess"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/btn_grant_usage_access"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="12dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/label_accessibility_note"
-            android:textSize="12sp"
+            android:text="@string/label_accessibility_api_note"
+            android:textSize="14sp"
             android:layout_marginBottom="4dp" />
 
         <Button
@@ -168,7 +176,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/btn_enable_accessibility"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="12dp" />
 
         <Button
             android:id="@+id/btnAppList"

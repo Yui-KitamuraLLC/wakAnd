@@ -8,6 +8,9 @@
     <string name="hint_project_name">プロジェクト名</string>
     <string name="btn_save">保存</string>
     <string name="section_tracking">トラッキング</string>
+    <string name="label_usage_access_note">（アプリの使用状況を取得するため）</string>
+    <string name="label_accessibility_api_note">（ブラウザURLを取得するため）</string>
+    <string name="btn_accessibility_api">AccessibilityAPIを許可</string>
     <string name="btn_grant_usage_access">使用状況アクセスを許可</string>
     <string name="btn_enable_accessibility">ユーザー補助サービスを有効化</string>
     <string name="btn_disable_accessibility">ユーザー補助サービスを無効化</string>
