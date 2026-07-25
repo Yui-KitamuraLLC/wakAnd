@@ -75,8 +75,11 @@
         <item>code reviewing</item>
         <item>notes</item>
     </string-array>
-    <string name="accessibility_disclosure_title">Accessibility Service Usage</string>
-    <string name="accessibility_disclosure_message">This app uses the Accessibility Service to retrieve the URL of the browser (Chrome) you are visiting for activity tracking. This information is only used for tracking and is not used for any other purpose. Do you agree to enable this service?</string>
+    <string name="accessibility_disclosure_title">About Accessibility Service API Usage</string>
+    <string name="accessibility_disclosure_message">This app uses the Accessibility Service API for the purpose of
+        retrieving URLs from browsers (Chrome, etc.) for activity tracking. This information is used only for URL
+        retrieval and is not used for any other purposes. Please agree only if necessary.
+    </string>
     <string name="agree">Agree</string>
     <string name="disagree">Disagree</string>
 </resources>
