@@ -8,9 +8,9 @@
     <string name="hint_project_name">プロジェクト名</string>
     <string name="btn_save">保存</string>
     <string name="section_tracking">トラッキング</string>
-    <string name="label_usage_access_note">（アプリの使用状況を取得するため）</string>
-    <string name="label_accessibility_api_note">（ブラウザURLを取得するため）</string>
-    <string name="btn_accessibility_api">AccessibilityAPIを許可</string>
+    <string name="label_usage_access_note">（アプリの使用統計を取得するため）</string>
+    <string name="label_accessibility_api_note">（アプリのアクティビティを詳細に取得するため）</string>
+    <string name="btn_accessibility_api">権限を許可する</string>
     <string name="btn_grant_usage_access">使用状況アクセスを許可</string>
     <string name="btn_enable_accessibility">ユーザー補助サービスを有効化</string>
     <string name="btn_disable_accessibility">ユーザー補助サービスを無効化</string>
@@ -72,7 +72,7 @@
         <item>メモ</item>
     </string-array>
     <string name="accessibility_disclosure_title">ユーザー補助サービス（Accessibility Service API）の使用に関する開示</string>
-    <string name="accessibility_disclosure_message">「wakAnd」は、ブラウザの利用状況を追跡する機能を可能にするために、アプリが閉じられているときや使用されていないときでも、ブラウザのURLを収集します。\n\n• 収集する情報：ブラウザのURL\n• 使用目的：特定のウェブサイトでの滞在時間を記録し、WakaTimeと同期するため\n• データの扱い：この情報はアクティビティ追跡のみに使用され、他の目的や広告に使用されることはありません。\n\n同意すると次のシステム設定画面が開きます。そこで「wakAnd」を有効にしてください。同意しますか？</string>
+    <string name="accessibility_disclosure_message">「wakAnd」は、アプリやウェブサイトの利用状況を詳細に追跡する機能を可能にするために、アプリが閉じられているときや使用されていないときでも、使用中のアプリ情報やブラウザのURLを収集します。\n\n• 収集する情報：使用中のアプリ名、ブラウザのURL\n• 使用目的：各アプリやサイトでの滞在時間を記録し、WakaTimeと同期するため\n• データの扱い：この情報はアクティビティ追跡のみに使用され、他の目的や広告に使用されることはありません。\n\n同意すると次のシステム設定画面が開きます。そこで「wakAnd」を有効にしてください。同意しますか？</string>
     <string name="agree">同意する</string>
     <string name="disagree">同意しない</string>
 </resources>

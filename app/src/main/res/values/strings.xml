@@ -8,9 +8,9 @@
     <string name="hint_project_name">Project Name</string>
     <string name="btn_save">Save</string>
     <string name="section_tracking">Tracking</string>
-    <string name="label_usage_access_note">(To track app usage)</string>
-    <string name="label_accessibility_api_note">(To track browser URLs)</string>
-    <string name="btn_accessibility_api">Allow AccessibilityAPI</string>
+    <string name="label_usage_access_note">(To track app usage statistics)</string>
+    <string name="label_accessibility_api_note">(To track detailed app activity)</string>
+    <string name="btn_accessibility_api">Grant Permission</string>
     <string name="btn_grant_usage_access">Grant Usage Access</string>
     <string name="btn_enable_accessibility">Enable Accessibility Service</string>
     <string name="btn_disable_accessibility">Disable Accessibility Service</string>
@@ -81,7 +81,7 @@
         <item>notes</item>
     </string-array>
     <string name="accessibility_disclosure_title">Accessibility Service API Disclosure</string>
-    <string name="accessibility_disclosure_message">"wakAnd" collects browser URLs even when the app is closed or not in use to enable browser activity tracking.\n\n• Information Collected: Browser URLs\n• Purpose: To record your time spent on specific websites and sync with WakaTime.\n• Data Usage: This information is used ONLY for activity tracking and will not be shared or used for advertising.\n\nYou will need to manually enable the "wakAnd" service in the next system settings screen. Do you agree to allow this?</string>
+    <string name="accessibility_disclosure_message">"wakAnd" collects information about running apps and browser URLs even when the app is closed or not in use to enable detailed activity tracking.\n\n• Information Collected: Names of running apps, Browser URLs\n• Purpose: To record your time spent on specific apps or websites and sync with WakaTime.\n• Data Usage: This information is used ONLY for activity tracking and will not be shared or used for advertising.\n\nYou will need to manually enable the "wakAnd" service in the next system settings screen. Do you agree to allow this?</string>
     <string name="agree">Agree</string>
     <string name="disagree">Disagree</string>
 </resources>

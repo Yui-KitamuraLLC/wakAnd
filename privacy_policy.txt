@@ -5,19 +5,19 @@ Privacy Policy for wakAnd
 wakAnd ("the App") is committed to protecting your privacy. This Privacy Policy explains how we collect and use information.
 
 1. Information Collection and Use
-To enable its core functionality of tracking browser activity and syncing with WakaTime, the App uses the Accessibility Service API.
+To enable its core functionality of tracking detailed app/browser activity and syncing with WakaTime, the App uses the Accessibility Service API.
 
-- Browser URLs: The App collects the URLs of websites you visit while using browsers (such as Chrome).
-- Usage Timing: The App records the duration spent on these URLs.
+- App Info and Browser URLs: The App collects the names of running apps and the URLs of websites you visit while using browsers (such as Chrome).
+- Usage Timing: The App records the duration spent on these apps or URLs.
 - Background Collection: This information is collected even when the App is closed or not in use, provided the Accessibility Service is enabled by the user.
 
 2. Purpose of Collection
 The collected information is used solely for:
-- Calculating time spent on specific websites/domains.
+- Calculating time spent on specific apps, websites, or domains.
 - Syncing this activity data with your WakaTime account via the WakaTime API.
 
 3. Data Sharing and Disclosure
-- The App sends the collected URL and duration data to WakaTime (wakatime.com) or your configured custom API endpoint.
+- The App sends the collected app names, URLs and duration data to WakaTime (wakatime.com) or your configured custom API endpoint.
 - We do NOT share, sell, or use this information for advertising or any other third-party purposes.
 - Data is transmitted securely via HTTPS.
 
@@ -33,3 +33,5 @@ We may update our Privacy Policy from time to time. You are advised to review th
 
 7. Contact Us
 If you have any questions about this Privacy Policy, please contact the developer.
+
+Enacted: 2026-07-25
