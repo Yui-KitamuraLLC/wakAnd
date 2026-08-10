@@ -80,4 +80,6 @@
     <string name="package_not_found">パッケージが見つかりません</string>
     <string name="already_exists">既に追加されています</string>
     <string name="added">追加しました</string>
+    <string name="label_add_manually">アプリの手動追加</string>
+    <string name="note_query_all_packages_removed">Google Playのポリシー変更に伴い、インストール済みアプリの全取得ができなくなりました。追跡したいアプリが一覧に表示されない場合は、パッケージ名を入力して追加してください。</string>
 </resources>

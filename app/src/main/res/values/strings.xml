@@ -89,4 +89,6 @@
     <string name="package_not_found">Package not found</string>
     <string name="already_exists">Already in list</string>
     <string name="added">Added</string>
+    <string name="label_add_manually">Add App Manually</string>
+    <string name="note_query_all_packages_removed">Due to Google Play policy, we can no longer retrieve the full list of installed apps. If the app you want to track is not shown below, please enter its package name to add it.</string>
 </resources>
