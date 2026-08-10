@@ -74,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
         btnEnableAccessibility = findViewById(R.id.btnEnableAccessibility);
         Button btnLang = findViewById(R.id.btnLang);
         Button btnAppList = findViewById(R.id.btnAppList);
-        Button btnAddPackageShortcut = findViewById(R.id.btnAddPackageShortcut);
         Button btnOfflineTime = findViewById(R.id.btnOfflineTime);
 
         loadSettings();
@@ -135,11 +134,6 @@ public class MainActivity extends AppCompatActivity {
         });
         btnAppList.setOnClickListener(v ->
                 startActivity(new Intent(this, AppListActivity.class)));
-        btnAddPackageShortcut.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AppListActivity.class);
-            intent.putExtra("FOCUS_MANUAL_ADD", true);
-            startActivity(intent);
-        });
         btnOfflineTime.setOnClickListener(v ->
                 startActivity(new Intent(this, OfflineTimeActivity.class)));
         btnLang.setOnClickListener(v -> toggleLanguage());

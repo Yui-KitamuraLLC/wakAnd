@@ -108,10 +108,6 @@ public class AppListActivity extends AppCompatActivity {
             appSettingsManager.saveAll(adapter.getSettings());
             Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
         });
-
-        if (getIntent().getBooleanExtra("FOCUS_MANUAL_ADD", false)) {
-            editPackageName.requestFocus();
-        }
     }
 
     private void addPackageToList(String pkg) {

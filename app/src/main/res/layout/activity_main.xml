@@ -179,28 +179,12 @@
             android:layout_marginStart="16dp"
             android:layout_marginBottom="12dp" />
 
-        <LinearLayout
+        <Button
+            android:id="@+id/btnAppList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
-
-            <Button
-                android:id="@+id/btnAppList"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/btn_app_list"
-                android:layout_marginEnd="4dp" />
-
-            <Button
-                android:id="@+id/btnAddPackageShortcut"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/btn_add"
-                android:layout_marginStart="4dp" />
-        </LinearLayout>
+            android:text="@string/btn_app_list"
+            android:layout_marginBottom="8dp" />
 
         <Button
             android:id="@+id/btnLang"
