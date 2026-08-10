@@ -5,12 +5,16 @@ import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -58,6 +62,10 @@ public class AppListActivity extends AppCompatActivity {
         Button btnSave = findViewById(R.id.btnSaveAppList);
         Spinner spinnerSort = findViewById(R.id.spinnerSort);
 
+        // Package Name Input
+        EditText editPackageName = findViewById(R.id.editPackageName);
+        Button btnAddPackage = findViewById(R.id.btnAddPackage);
+
         String[] sortOptions = {
                 getString(R.string.sort_by_name),
                 getString(R.string.sort_by_install),
@@ -89,10 +97,41 @@ public class AppListActivity extends AppCompatActivity {
             public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
 
+        btnAddPackage.setOnClickListener(v -> {
+            String pkg = editPackageName.getText().toString().trim();
+            if (pkg.isEmpty()) return;
+            addPackageToList(pkg);
+            editPackageName.setText("");
+        });
+
         btnSave.setOnClickListener(v -> {
             appSettingsManager.saveAll(adapter.getSettings());
             Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void addPackageToList(String pkg) {
+        PackageManager pm = getPackageManager();
+        try {
+            ApplicationInfo ai = pm.getApplicationInfo(pkg, 0);
+            String label = pm.getApplicationLabel(ai).toString();
+            PackageInfo pi = pm.getPackageInfo(pkg, 0);
+            
+            // Check if already in list
+            for (AppListAdapter.AppInfo app : allApps) {
+                if (pkg.equals(app.packageName)) {
+                    Toast.makeText(this, R.string.already_exists, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+
+            AppListAdapter.AppInfo newApp = new AppListAdapter.AppInfo(label, pkg, pi.firstInstallTime);
+            allApps.add(newApp);
+            adapter.updateList(new ArrayList<>(allApps));
+            Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show();
+        } catch (PackageManager.NameNotFoundException e) {
+            Toast.makeText(this, R.string.package_not_found, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void sortAndUpdate(int sortType) {

@@ -75,4 +75,9 @@
     <string name="accessibility_disclosure_message">「wakAnd」は、アプリやウェブサイトの利用状況を詳細に追跡する機能を可能にするために、アプリが閉じられているときや使用されていないときでも、使用中のアプリ情報やブラウザのURLを収集します。\n\n• 収集する情報：使用中のアプリ名、ブラウザのURL\n• 使用目的：各アプリやサイトでの滞在時間を記録し、WakaTimeと同期するため\n• データの扱い：この情報はアクティビティ追跡のみに使用され、他の目的や広告に使用されることはありません。\n\n同意すると次のシステム設定画面が開きます。そこで「wakAnd」を有効にしてください。同意しますか？</string>
     <string name="agree">同意する</string>
     <string name="disagree">同意しない</string>
+    <string name="hint_package_name">パッケージ名 (例: com.android.chrome)</string>
+    <string name="btn_add">追加</string>
+    <string name="package_not_found">パッケージが見つかりません</string>
+    <string name="already_exists">既に追加されています</string>
+    <string name="added">追加しました</string>
 </resources>

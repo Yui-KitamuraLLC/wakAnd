@@ -84,4 +84,9 @@
     <string name="accessibility_disclosure_message">"wakAnd" collects information about running apps and browser URLs even when the app is closed or not in use to enable detailed activity tracking.\n\n• Information Collected: Names of running apps, Browser URLs\n• Purpose: To record your time spent on specific apps or websites and sync with WakaTime.\n• Data Usage: This information is used ONLY for activity tracking and will not be shared or used for advertising.\n\nYou will need to manually enable the "wakAnd" service in the next system settings screen. Do you agree to allow this?</string>
     <string name="agree">Agree</string>
     <string name="disagree">Disagree</string>
+    <string name="hint_package_name">Package name (e.g. com.android.chrome)</string>
+    <string name="btn_add">Add</string>
+    <string name="package_not_found">Package not found</string>
+    <string name="already_exists">Already in list</string>
+    <string name="added">Added</string>
 </resources>
