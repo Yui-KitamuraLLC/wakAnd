@@ -116,26 +116,29 @@ public class AppListActivity extends AppCompatActivity {
 
     private void addPackageToList(String pkg) {
         PackageManager pm = getPackageManager();
+        String label = pkg;
+        long installTime = 0;
         try {
             ApplicationInfo ai = pm.getApplicationInfo(pkg, 0);
-            String label = pm.getApplicationLabel(ai).toString();
+            label = pm.getApplicationLabel(ai).toString();
             PackageInfo pi = pm.getPackageInfo(pkg, 0);
-            
-            // Check if already in list
-            for (AppListAdapter.AppInfo app : allApps) {
-                if (pkg.equals(app.packageName)) {
-                    Toast.makeText(this, R.string.already_exists, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            }
-
-            AppListAdapter.AppInfo newApp = new AppListAdapter.AppInfo(label, pkg, pi.firstInstallTime);
-            allApps.add(newApp);
-            adapter.updateList(new ArrayList<>(allApps));
-            Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show();
+            installTime = pi.firstInstallTime;
         } catch (PackageManager.NameNotFoundException e) {
-            Toast.makeText(this, R.string.package_not_found, Toast.LENGTH_SHORT).show();
+            // Package info not accessible, but we allow adding by package name
         }
+
+        // Check if already in list
+        for (AppListAdapter.AppInfo app : allApps) {
+            if (pkg.equals(app.packageName)) {
+                Toast.makeText(this, R.string.already_exists, Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
+        AppListAdapter.AppInfo newApp = new AppListAdapter.AppInfo(label, pkg, installTime);
+        allApps.add(newApp);
+        adapter.updateList(new ArrayList<>(allApps));
+        Toast.makeText(this, R.string.added, Toast.LENGTH_SHORT).show();
     }
 
     private void sortAndUpdate(int sortType) {
