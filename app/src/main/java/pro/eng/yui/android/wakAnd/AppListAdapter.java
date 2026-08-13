@@ -93,26 +93,30 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AppInfo appInfo = apps.get(position);
-        String appName = appInfo.label;
-        AppSettingsManager.AppSetting setting = settings.get(appName);
+        PackageManager pm = holder.itemView.getContext().getPackageManager();
+
+        AppSettingsManager.AppSetting setting = settings.get(appInfo.packageName);
+        if (setting == null) {
+            setting = settings.get(appInfo.label);
+        }
+
+        if (setting == null) {
+            setting = new AppSettingsManager.AppSetting(false, "AndroidUsage", appInfo.packageName, appInfo.label);
+            settings.put(appInfo.packageName != null ? appInfo.packageName : appInfo.label, setting);
+        } else {
+            if (setting.packageName == null) setting.packageName = appInfo.packageName;
+            if (setting.label == null) setting.label = appInfo.label;
+            // Migration
+            if (appInfo.packageName != null && settings.containsKey(appInfo.label) && !settings.containsKey(appInfo.packageName)) {
+                settings.remove(appInfo.label);
+                settings.put(appInfo.packageName, setting);
+            }
+        }
 
         // Load app icon
-        if (appInfo.packageName != null) {
-            try {
-                PackageManager pm = holder.itemView.getContext().getPackageManager();
-                Drawable icon = pm.getApplicationIcon(appInfo.packageName);
-                holder.imgAppIcon.setImageDrawable(icon);
-            } catch (PackageManager.NameNotFoundException e) {
-                holder.imgAppIcon.setImageResource(android.R.drawable.sym_def_app_icon);
-            }
-        } else {
-            holder.imgAppIcon.setImageResource(android.R.drawable.sym_def_app_icon);
-        }
-        if (setting == null) {
-            setting = new AppSettingsManager.AppSetting(false, "AndroidUsage");
-            settings.put(appName, setting);
-        }
+        holder.imgAppIcon.setImageDrawable(AppUtil.getAppIcon(pm, appInfo.packageName));
 
+        String appName = appInfo.label;
         holder.txtAppName.setText(appName);
 
         // Format install date

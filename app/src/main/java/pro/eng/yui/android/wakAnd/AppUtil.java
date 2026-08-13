@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.provider.Settings;
 import android.text.TextUtils;
 
@@ -25,12 +26,33 @@ public class AppUtil {
      * @return アプリケーションのラベル
      */
     public static String getAppLabel(PackageManager pm, String packageName) {
+        if (packageName == null) {
+            return "Unknown";
+        }
         try {
             ApplicationInfo info = pm.getApplicationInfo(packageName, 0);
             return pm.getApplicationLabel(info).toString();
         } catch (PackageManager.NameNotFoundException e) {
             return packageName;
         }
+    }
+
+    /**
+     * 指定されたパッケージ名のアプリケーションアイコンを返します。
+     * 見つからない場合はデフォルトのアイコンを返します。
+     *
+     * @param pm          PackageManager インスタンス
+     * @param packageName 対象のパッケージ名
+     * @return アプリケーションのアイコン
+     */
+    public static Drawable getAppIcon(PackageManager pm, String packageName) {
+        try {
+            if (packageName != null) {
+                return pm.getApplicationIcon(packageName);
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+        return pm.getDefaultActivityIcon();
     }
 
     /**

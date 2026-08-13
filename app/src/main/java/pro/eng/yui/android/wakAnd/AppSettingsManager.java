@@ -24,10 +24,18 @@ public class AppSettingsManager {
     public static class AppSetting {
         public boolean enabled;
         public String projectName;
+        public String packageName;
+        public String label;
 
         public AppSetting(boolean enabled, String projectName) {
+            this(enabled, projectName, null, null);
+        }
+
+        public AppSetting(boolean enabled, String projectName, String packageName, String label) {
             this.enabled = enabled;
             this.projectName = projectName;
+            this.packageName = packageName;
+            this.label = label;
         }
     }
 
@@ -38,12 +46,23 @@ public class AppSettingsManager {
             JSONObject root = new JSONObject(json);
             Iterator<String> keys = root.keys();
             while (keys.hasNext()) {
-                String appName = keys.next();
-                JSONObject obj = root.getJSONObject(appName);
-                result.put(appName, new AppSetting(
+                String key = keys.next();
+                JSONObject obj = root.getJSONObject(key);
+                AppSetting setting = new AppSetting(
                         obj.optBoolean("enabled", false),
-                        obj.optString("projectName", "AndroidUsage")
-                ));
+                        obj.optString("projectName", "AndroidUsage"),
+                        obj.optString("packageName", null),
+                        obj.optString("label", null)
+                );
+                // If stored by label (old format), key is the label
+                if (setting.label == null) {
+                    setting.label = key;
+                }
+                // If packageName is missing, and key looks like a package name
+                if (setting.packageName == null && key.contains(".")) {
+                    setting.packageName = key;
+                }
+                result.put(key, setting);
             }
         } catch (JSONException ignored) {
         }
@@ -57,6 +76,8 @@ public class AppSettingsManager {
                 JSONObject obj = new JSONObject();
                 obj.put("enabled", entry.getValue().enabled);
                 obj.put("projectName", entry.getValue().projectName);
+                obj.put("packageName", entry.getValue().packageName);
+                obj.put("label", entry.getValue().label);
                 root.put(entry.getKey(), obj);
             }
         } catch (JSONException ignored) {

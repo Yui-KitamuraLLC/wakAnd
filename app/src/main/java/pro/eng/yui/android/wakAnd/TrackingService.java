@@ -41,7 +41,7 @@ public class TrackingService extends Service {
             BrowserUrlAccessibilityService.clearIfNotBrowser(packageName);
             String url = isBrowser ? BrowserUrlAccessibilityService.getLastUrl() : null;
             String content;
-            if (isTrackedApp(appName)) {
+            if (isTrackedApp(packageName, appName)) {
                 if (isBrowser) {
                     if (!AppUtil.isAccessibilityServiceEnabled(TrackingService.this, BrowserUrlAccessibilityService.class)) {
                         content = appName + "(" + localizedContext.getString(R.string.label_permission_denied) + ")";
@@ -73,7 +73,7 @@ public class TrackingService extends Service {
                 updateNotification(content);
                 lastNotificationText = content;
             }
-            sendHeartbeat(appName, url, isBrowser);
+            sendHeartbeat(packageName, appName, url, isBrowser);
             handler.postDelayed(this, POLL_INTERVAL_MS);
         }
     };
@@ -155,7 +155,7 @@ public class TrackingService extends Service {
         return false;
     }
 
-    private void sendHeartbeat(String appName, String url, boolean isBrowser) {
+    private void sendHeartbeat(String packageName, String appName, String url, boolean isBrowser) {
         if (wakaTimeClient == null) return;
 
         boolean hasUrl = url != null && !url.isEmpty();
@@ -171,7 +171,11 @@ public class TrackingService extends Service {
         String project = null;
 
         if (appSettingsManager.hasAnySettings()) {
-            AppSettingsManager.AppSetting setting = appSettingsManager.getSettingFor(appName);
+            AppSettingsManager.AppSetting setting = appSettingsManager.getSettingFor(packageName);
+            if (setting == null) {
+                setting = appSettingsManager.getSettingFor(appName);
+            }
+
             if (setting == null || !setting.enabled) {
                 return;
             }
@@ -181,11 +185,14 @@ public class TrackingService extends Service {
         wakaTimeClient.sendHeartbeat(entity, project, isUrl);
     }
 
-    private boolean isTrackedApp(String appName) {
+    private boolean isTrackedApp(String packageName, String appName) {
         if (!appSettingsManager.hasAnySettings()) {
             return true;
         }
-        AppSettingsManager.AppSetting setting = appSettingsManager.getSettingFor(appName);
+        AppSettingsManager.AppSetting setting = appSettingsManager.getSettingFor(packageName);
+        if (setting == null) {
+            setting = appSettingsManager.getSettingFor(appName);
+        }
         return setting != null && setting.enabled;
     }
 

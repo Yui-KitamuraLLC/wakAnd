@@ -26,8 +26,8 @@ public class NewAppActionReceiver extends BroadcastReceiver {
             String appLabel = AppUtil.getAppLabel(context.getPackageManager(), packageName);
             AppSettingsManager manager = new AppSettingsManager(context);
             Map<String, AppSettingsManager.AppSetting> all = manager.loadAll();
-            if (!all.containsKey(appLabel)) {
-                all.put(appLabel, new AppSettingsManager.AppSetting(true, "AndroidUsage"));
+            if (!all.containsKey(packageName) && !all.containsKey(appLabel)) {
+                all.put(packageName, new AppSettingsManager.AppSetting(true, "AndroidUsage", packageName, appLabel));
                 manager.saveAll(all);
             }
         }

@@ -149,8 +149,8 @@ public class AppListActivity extends AppCompatActivity {
                 break;
             case 2: // Enabled first, then by name
                 Collections.sort(sorted, (a, b) -> {
-                    AppSettingsManager.AppSetting sa = settings.get(a.label);
-                    AppSettingsManager.AppSetting sb = settings.get(b.label);
+                    AppSettingsManager.AppSetting sa = getSettingFor(a, settings);
+                    AppSettingsManager.AppSetting sb = getSettingFor(b, settings);
                     boolean ea = sa != null && sa.enabled;
                     boolean eb = sb != null && sb.enabled;
                     if (ea != eb) return ea ? -1 : 1;
@@ -159,8 +159,8 @@ public class AppListActivity extends AppCompatActivity {
                 break;
             case 3: // Project name A-Z
                 Collections.sort(sorted, (a, b) -> {
-                    AppSettingsManager.AppSetting sa = settings.get(a.label);
-                    AppSettingsManager.AppSetting sb = settings.get(b.label);
+                    AppSettingsManager.AppSetting sa = getSettingFor(a, settings);
+                    AppSettingsManager.AppSetting sb = getSettingFor(b, settings);
                     String pa = sa != null ? sa.projectName : "AndroidUsage";
                     String pb = sb != null ? sb.projectName : "AndroidUsage";
                     return pa.compareToIgnoreCase(pb);
@@ -170,8 +170,16 @@ public class AppListActivity extends AppCompatActivity {
         adapter.updateList(sorted);
     }
 
+    private AppSettingsManager.AppSetting getSettingFor(AppListAdapter.AppInfo info, Map<String, AppSettingsManager.AppSetting> settings) {
+        if (info.packageName != null && settings.containsKey(info.packageName)) {
+            return settings.get(info.packageName);
+        }
+        return settings.get(info.label);
+    }
+
     private List<AppListAdapter.AppInfo> getRecentApps() {
-        Map<String, String> labelToPackage = new HashMap<>();
+        Map<String, AppListAdapter.AppInfo> packageToInfo = new HashMap<>();
+        PackageManager pm = getPackageManager();
 
         if (hasUsageStatsPermission()) {
             UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
@@ -180,12 +188,19 @@ public class AppListActivity extends AppCompatActivity {
                     UsageStatsManager.INTERVAL_WEEKLY, now - 7 * 24 * 60 * 60 * 1000L, now);
 
             if (stats != null) {
-                PackageManager pm = getPackageManager();
                 for (UsageStats s : stats) {
                     if (s.getTotalTimeInForeground() > 0) {
                         String pkg = s.getPackageName();
+                        if (packageToInfo.containsKey(pkg)) continue;
+
                         String label = AppUtil.getAppLabel(pm, pkg);
-                        labelToPackage.put(label, pkg);
+                        long installTime = 0;
+                        try {
+                            PackageInfo pi = pm.getPackageInfo(pkg, 0);
+                            installTime = pi.firstInstallTime;
+                        } catch (PackageManager.NameNotFoundException ignored) {
+                        }
+                        packageToInfo.put(pkg, new AppListAdapter.AppInfo(label, pkg, installTime));
                     }
                 }
             }
@@ -193,29 +208,30 @@ public class AppListActivity extends AppCompatActivity {
 
         // Also include apps that already have settings
         Map<String, AppSettingsManager.AppSetting> existing = appSettingsManager.loadAll();
-        for (String label : existing.keySet()) {
-            if (!labelToPackage.containsKey(label)) {
-                labelToPackage.put(label, null);
-            }
-        }
+        for (Map.Entry<String, AppSettingsManager.AppSetting> entry : existing.entrySet()) {
+            String key = entry.getKey();
+            AppSettingsManager.AppSetting s = entry.getValue();
+            String pkg = s.packageName != null ? s.packageName : (key.contains(".") ? key : null);
+            String label = s.label != null ? s.label : key;
 
-        PackageManager pm = getPackageManager();
-        List<String> sortedLabels = new ArrayList<>(labelToPackage.keySet());
-        Collections.sort(sortedLabels);
-
-        List<AppListAdapter.AppInfo> apps = new ArrayList<>();
-        for (String label : sortedLabels) {
-            String pkg = labelToPackage.get(label);
-            long installTime = 0;
-            if (pkg != null) {
+            if (pkg != null && !packageToInfo.containsKey(pkg)) {
+                long installTime = 0;
                 try {
                     PackageInfo pi = pm.getPackageInfo(pkg, 0);
                     installTime = pi.firstInstallTime;
                 } catch (PackageManager.NameNotFoundException ignored) {
                 }
+                packageToInfo.put(pkg, new AppListAdapter.AppInfo(label, pkg, installTime));
+            } else if (pkg == null) {
+                // Legacy or unknown, but we still want to show it if enabled
+                // However, without package name we can't do much.
+                // For now, skip if no package name and not in recent apps.
             }
-            apps.add(new AppListAdapter.AppInfo(label, pkg, installTime));
         }
+
+        List<AppListAdapter.AppInfo> apps = new ArrayList<>(packageToInfo.values());
+        Collections.sort(apps, (a, b) -> a.label.compareToIgnoreCase(b.label));
+
         return apps;
     }
 
