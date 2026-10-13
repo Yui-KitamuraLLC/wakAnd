@@ -92,7 +92,7 @@ jobs:
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           curl --retry 5 --retry-connrefused --retry-delay 1 --fail --silent --show-error http://127.0.0.1:8080/android/wakAnd/ > /tmp/wakand-auth-response.json
-          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": False}'
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": True}'
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST http://127.0.0.1:8080/android/wakAnd/)" = 405
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/oauth/callback)" = 400
           test "$(curl --silent --output /tmp/wakand-config-check.json --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/config-check.php)" = 503
@@ -172,4 +172,4 @@ jobs:
       - name: Verify deployed PHP response over HTTPS
         run: |
           curl --fail --silent --show-error --max-time 30 https://yui.eng.pro/android/wakAnd/ > /tmp/wakand-auth-response.json
-          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": False}'
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": True}'

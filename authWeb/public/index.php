@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// Root remains a deployment probe; OAuth readiness is checked by the private CLI.
+// Root remains a deployment marker; use protected admin diagnostics to inspect runtime.
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if (!in_array($path, ['/android/wakAnd/', '/android/wakAnd/index.php'], true)) {
     ini_set('display_errors', '0');
@@ -37,4 +37,5 @@ if (!in_array($path, ['/android/wakAnd/', '/android/wakAnd/index.php'], true)) {
     exit;
 }
 
-echo json_encode(['service' => 'wakand-auth', 'oauth_ready' => false]);
+// Fixed deployment marker after acceptance; this does not run runtime/DB diagnostics.
+echo json_encode(['service' => 'wakand-auth', 'oauth_ready' => true]);

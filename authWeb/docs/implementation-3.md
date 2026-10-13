@@ -74,7 +74,7 @@ admin.phpは非公開の期限付き認証ファイルがない/期限切れな�
 Apacheは本ディレクトリ内のRewriteEngine・AllowOverrideを許可する必要がある。
 CIでApacheの経路とライブラリ直接アクセス拒否を検証するが、実サーバーでの確認は別途必要。
 
-- ルートの`oauth_ready:false`は互換維持した配置プローブ。稼働可否の判定には使わない。
+- ルートの`oauth_ready:true`は検収後の固定配置プローブ（2026-10-14に管理者指示でfalseから変更）。リクエスト時の稼働可否判定には使わない。
 - config-check.phpも従来OAuth登録値の読取だけ。本番DBやtoken交換の成功を意味しない。
 - 新OAuth経路はmaintenance未設定/true、DB・鍵・checksum不整合で503になる。
 - 全ファイル配置と診断が成功した後、稼働開始の承認を受けて管理者がmaintenance=falseへ切り替える。
