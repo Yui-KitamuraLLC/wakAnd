@@ -1,0 +1,4 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule ^_.*\.php$ - [F,END]
+RewriteRule ^(?:oauth/(?:launch|callback)|app/complete|v1/link/(?:start|complete|disconnect)|v1/token/refresh)$ index.php [END]

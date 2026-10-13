@@ -89,4 +89,19 @@
     <string name="package_not_found">Package not found</string>
     <string name="already_exists">Already in list</string>
     <string name="added">Added</string>
+    <string name="oauth_settings">WakaTime OAuth</string>
+    <string name="oauth_connect">Connect / reconnect WakaTime</string>
+    <string name="oauth_check">Check authorization / retry disconnect</string>
+    <string name="oauth_disconnect">Disconnect WakaTime</string>
+    <string name="oauth_disconnect_confirm">Stop using OAuth on this device and revoke this connection? Offline requests remain queued until a connection is available.</string>
+    <string name="oauth_checking">Checking connection…</string>
+    <string name="oauth_active">WakaTime OAuth connected.</string>
+    <string name="oauth_pending">Waiting for browser authorization. Return here and check again.</string>
+    <string name="oauth_reauth">WakaTime authorization is required again.</string>
+    <string name="oauth_unlinked">WakaTime OAuth is not connected.</string>
+    <string name="oauth_disconnect_pending">Stopped locally. Provider revocation is pending.</string>
+    <string name="oauth_provider_confirmation">Stopped locally. Check and revoke this connection in WakaTime settings.</string>
+    <string name="oauth_invalid_callback">This return link does not match the authorization started on this device.</string>
+    <string name="oauth_retry_later">An operation is in progress or requests are limited. Check again later.</string>
+    <string name="oauth_connection_failed">Connection could not be checked. Existing authorization is retained.</string>
 </resources>

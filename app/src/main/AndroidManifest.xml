@@ -41,6 +41,15 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".OAuthActivity" android:exported="true">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="yui.eng.pro" android:path="/android/wakAnd/app/complete" />
+            </intent-filter>
+        </activity>
+
         <activity
                 android:name=".AppListActivity"
                 android:exported="false" />

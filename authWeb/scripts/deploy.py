@@ -50,10 +50,18 @@ def stage(root, env):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(local, target)
     # This library contains no credentials. The private config stays on the server.
-    library = root / 'src' / 'Config.php'
-    if library.is_symlink() or not library.is_file():
-        raise ValueError('Missing or invalid configuration library')
-    shutil.copyfile(library, output / '_config.php')
+    for source, target in [('Config.php', '_config.php'), ('Core.php', '_core.php'),
+                           ('Database.php', '_database.php'), ('OAuthService.php', '_oauth.php'), ('Http.php', '_http.php')]:
+        library = root / 'src' / source
+        if library.is_symlink() or not library.is_file():
+            raise ValueError('Missing or invalid runtime library')
+        shutil.copyfile(library, output / target)
+    # Release checksum includes the two known checkout encodings of this exact DDL.
+    # Neither variant changes SQL. Admin imports may come from Windows or GitHub.
+    import hashlib
+    ddl = (root / 'schema/001_oauth_mysql.sql').read_bytes().replace(b'\r\n', b'\n')
+    hashes = [hashlib.sha256(ddl).hexdigest(), hashlib.sha256(ddl.replace(b'\n', b'\r\n')).hexdigest()]
+    (output / '_schema.php').write_text('<?php return ' + repr(hashes) + ';\n', encoding='utf-8')
     return output
 
 

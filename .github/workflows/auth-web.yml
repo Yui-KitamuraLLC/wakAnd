@@ -4,7 +4,7 @@ on:
   pull_request:
     paths: ['authWeb/**', '.github/workflows/auth-web.yml']
   push:
-    branches: [main, wk1oauth]
+    branches: [main, wk1oauth, wk3impl]
     paths: ['authWeb/**', '.github/workflows/auth-web.yml']
   workflow_dispatch:
 
@@ -20,6 +20,7 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: disposable-ci-password
           MYSQL_DATABASE: wakand_test
+        ports: ['3306:3306']
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pdisposable-ci-password"
           --health-interval=10s
@@ -42,6 +43,11 @@ jobs:
           test "$(mysql_test -e "SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='wakand_test' AND TABLE_NAME='oauth_link_sessions' AND REFERENCED_TABLE_NAME='oauth_links';")" = 1
           test "$(mysql_test -e "SELECT COUNT(*) FROM oauth_schema_versions;")" = 0
           echo 'MySQL 8.0: four InnoDB tables and session foreign key verified; no production connection.'
+      - name: Validate OAuth lifecycle with independent MySQL connections
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php8.3-cli php8.3-mysql php8.3-curl
+          php authWeb/tests/runtime_test.php
 
   validate:
     runs-on: ubuntu-24.04
@@ -52,7 +58,7 @@ jobs:
       - name: Install PHP CLI
         run: |
           sudo apt-get update
-          sudo apt-get install -y php8.3-cli
+          sudo apt-get install -y php8.3-cli php8.3-curl
       - name: Validate PHP and deployment boundaries
         run: |
           find authWeb -name '*.php' -print0 | xargs -0 -r -n1 php -l
@@ -62,18 +68,29 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/wakand-auth-site/android/wakAnd
-          cp authWeb/public/index.php /tmp/wakand-auth-site/android/wakAnd/index.php
-          cp authWeb/public/config-check.php /tmp/wakand-auth-site/android/wakAnd/config-check.php
-          cp authWeb/src/Config.php /tmp/wakand-auth-site/android/wakAnd/_config.php
+          FTP_SERVER=yui.eng.pro FTP_SERVER_DIR=/android/wakAnd/ python3 authWeb/scripts/deploy.py
+          cp -a authWeb/dist/. /tmp/wakand-auth-site/android/wakAnd/
           php -S 127.0.0.1:8080 -t /tmp/wakand-auth-site > /tmp/wakand-auth-php.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           curl --retry 5 --retry-connrefused --retry-delay 1 --fail --silent --show-error http://127.0.0.1:8080/android/wakAnd/ > /tmp/wakand-auth-response.json
           python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": False}'
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST http://127.0.0.1:8080/android/wakAnd/)" = 405
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/oauth/callback)" = 404
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/oauth/callback)" = 400
           test "$(curl --silent --output /tmp/wakand-config-check.json --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/config-check.php)" = 503
           python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-config-check.json").read_text()) == {"configured": False}'
+      - name: Verify Apache routing and library access boundary
+        run: |
+          sudo apt-get install -y apache2 libapache2-mod-php8.3
+          sudo a2enmod rewrite
+          sudo cp -a /tmp/wakand-auth-site/android /var/www/html/
+          printf '<Directory /var/www/html/android/wakAnd>\nAllowOverride All\nRequire all granted\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-test.conf > /dev/null
+          sudo a2enconf wakand-test
+          sudo service apache2 restart
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/.htaccess)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/schema/001_oauth_mysql.sql)" = 404
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')

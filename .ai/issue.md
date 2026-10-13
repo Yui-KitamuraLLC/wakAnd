@@ -33,6 +33,8 @@ GitHub 側の方針が変わった場合は、このファイルも更新して�
 - #12の設計成果物は `authWeb/docs/oauth-design.md`、初期DDLは
   `authWeb/schema/001_oauth_mysql.sql`。設計完了と本番導入・実疎通を区別する。
 - DBは管理者が用意したMySQL 8.0を利用。契約レンタルサーバー内から接続する。
+  初期4テーブルとversion/checksum登録は管理者申告で済み。再作成・DROPは行わない。
+  #3実装・管理者確認は `authWeb/docs/implementation-3.md`。DB設定・暗号鍵・PHP接続/TLSは未確認。
   本番DBへローカルPC・GitHub Actionsから接続しない。CIでは独立したテストDBを使う。
 
 - WakaTime は2026年11月1日から API キーを活動送信専用に変更する旨を通知している。

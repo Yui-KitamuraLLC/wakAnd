@@ -56,7 +56,18 @@ try {
     rejectConfig($path, $root . '/www');
     file_put_contents($path, '<?php invalid php here');
     rejectConfig($path, $root . '/www');
-    echo "Private config: 9 checks passed\n";
+    $runtime = $valid['wakand'] + ['environment' => 'production', 'maintenance' => false,
+        'database' => ['host'=>'mysql50009.db.sakura.ne.jp','port'=>3306,'name'=>'db50125_wakand_wakand',
+            'user'=>'db50125_wakand_wakand','password'=>'fake-db-password','tls_mode'=>'provider_internal'],
+        'token_keys'=>['current'=>'v1','keys'=>['v1'=>base64_encode(random_bytes(32))]],
+        'rate_limit_key'=>base64_encode(random_bytes(32))];
+    \WakAnd\Auth\runtimeConfig($runtime);
+    foreach (['maintenance'=>true, 'environment'=>'development', 'rate_limit_key'=>$runtime['token_keys']['keys']['v1'],
+        'database'=>array_replace($runtime['database'], ['tls_mode'=>'automatic'])] as $field=>$value) {
+        try { \WakAnd\Auth\runtimeConfig(array_replace($runtime,[$field=>$value])); throw new \LogicException('Expected runtime rejection'); }
+        catch (\RuntimeException $error) { if ($error->getMessage() !== 'Private OAuth configuration is unavailable or invalid.') { throw new \LogicException('Config details leaked'); } }
+    }
+    echo "Private config: boundary, redaction, maintenance, keys and explicit DB transport checks passed\n";
 } finally {
     foreach ([$root . '/link.php', $root . '/www/exposed.php', $root . '/.php.config'] as $file) {
         if (is_link($file) || is_file($file)) {

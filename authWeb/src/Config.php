@@ -42,5 +42,37 @@ function loadConfig(string $configPath, string $webRoot): array
     if ($config['redirect_uri'] !== 'https://yui.eng.pro/android/wakAnd/oauth/callback') {
         throw new \RuntimeException($failure);
     }
-    return array_intersect_key($config, array_flip(['client_id', 'client_secret', 'redirect_uri']));
+    return $config;
+}
+
+function runtimeConfig(array $config): array
+{
+    $failure = 'Private OAuth configuration is unavailable or invalid.';
+    if (($config['maintenance'] ?? true) !== false || ($config['environment'] ?? '') !== 'production') {
+        throw new \RuntimeException($failure);
+    }
+    $db = $config['database'] ?? [];
+    foreach (['host', 'name', 'user', 'password', 'tls_mode'] as $field) {
+        if (!isset($db[$field]) || !is_string($db[$field]) || $db[$field] === ''
+            || str_starts_with($db[$field], 'REPLACE_') || preg_match('/[\x00-\x1f;]/', $db[$field])) {
+            throw new \RuntimeException($failure);
+        }
+    }
+    if ($db['host'] !== 'mysql50009.db.sakura.ne.jp' || $db['name'] !== 'db50125_wakand_wakand'
+        || $db['user'] !== 'db50125_wakand_wakand' || ($db['port'] ?? null) !== 3306
+        || !in_array($db['tls_mode'], ['required', 'provider_internal'], true)) { throw new \RuntimeException($failure); }
+    if ($db['tls_mode'] === 'required' && (!isset($db['tls_ca']) || !is_string($db['tls_ca']) || !is_readable($db['tls_ca']))) {
+        throw new \RuntimeException($failure);
+    }
+    $keys = $config['token_keys'] ?? [];
+    if (!isset($keys['current'], $keys['keys']) || !is_string($keys['current']) || !is_array($keys['keys'])
+        || !array_key_exists($keys['current'], $keys['keys'])) { throw new \RuntimeException($failure); }
+    foreach ($keys['keys'] as $id => $value) {
+        if (!is_string($id) || !preg_match('/^[A-Za-z0-9_-]{1,32}$/D', $id) || !is_string($value)
+            || strlen(base64_decode($value, true) ?: '') !== 32) { throw new \RuntimeException($failure); }
+    }
+    if (!isset($config['rate_limit_key']) || !is_string($config['rate_limit_key'])
+        || strlen(base64_decode($config['rate_limit_key'], true) ?: '') !== 32
+        || in_array($config['rate_limit_key'], $keys['keys'], true)) { throw new \RuntimeException($failure); }
+    return $config;
 }

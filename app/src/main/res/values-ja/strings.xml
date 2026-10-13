@@ -80,4 +80,19 @@
     <string name="package_not_found">パッケージが見つかりません</string>
     <string name="already_exists">既に追加されています</string>
     <string name="added">追加しました</string>
+    <string name="oauth_settings">WakaTime OAuth</string>
+    <string name="oauth_connect">WakaTimeを連携・再連携</string>
+    <string name="oauth_check">認可を確認・解除を再試行</string>
+    <string name="oauth_disconnect">WakaTimeの連携解除</string>
+    <string name="oauth_disconnect_confirm">この端末でOAuthの利用を停止し、連携を失効しますか？オフライン時は接続できるまで解除要求を保持します。</string>
+    <string name="oauth_checking">連携状態を確認中…</string>
+    <string name="oauth_active">WakaTime OAuth連携済み。</string>
+    <string name="oauth_pending">ブラウザでの認可待ちです。戻ってから再確認してください。</string>
+    <string name="oauth_reauth">WakaTimeの再認可が必要です。</string>
+    <string name="oauth_unlinked">WakaTime OAuthは未連携です。</string>
+    <string name="oauth_disconnect_pending">端末での利用は停止済みです。提供元での失効は保留中です。</string>
+    <string name="oauth_provider_confirmation">端末での利用は停止済みです。WakaTimeの設定で連携を確認・解除してください。</string>
+    <string name="oauth_invalid_callback">この復帰リンクは端末で開始した認可と一致しません。</string>
+    <string name="oauth_retry_later">処理中または回数制限中です。しばらく待って再確認してください。</string>
+    <string name="oauth_connection_failed">通信を確認できませんでした。既存の連携情報は保持しています。</string>
 </resources>

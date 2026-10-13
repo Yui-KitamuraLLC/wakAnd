@@ -25,6 +25,9 @@ jobs:
       - name: Decode Keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
 
+      - name: Validate OAuth destination and callback policy
+        run: gradle testDebugUnitTest
+
       - name: Build Release APK
         run: gradle assembleRelease
         env:
