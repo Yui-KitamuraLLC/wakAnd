@@ -58,11 +58,6 @@ jobs:
         env:
           FTP_SERVER: yui.eng.pro
           FTP_SERVER_DIR: /android/wakAnd/
-      - name: Compare PASV and EPSV reads
-        run: python3 authWeb/scripts/diagnose_ftp.py
-        env:
-          FTP_USER: ${{ secrets.ftp_user }}
-          FTP_PASSWORD: ${{ secrets.ftp_password }}
       - name: Sync public files FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
@@ -73,7 +68,6 @@ jobs:
           server-dir: /android/wakAnd/
           state-name: .wakand-auth-sync-state.json
           dangerous-clean-slate: false
-          log-level: verbose
       - name: Verify deployed PHP response over HTTPS
         run: |
           curl --fail --silent --show-error --max-time 30 https://yui.eng.pro/android/wakAnd/ > /tmp/wakand-auth-response.json
