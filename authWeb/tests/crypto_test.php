@@ -12,6 +12,7 @@ function rejectCrypto(callable $work): void {
 }
 $native=extension_loaded('sodium');
 $status=tokenCryptoStatus();
+if (getenv('WAKAND_TEST_CRYPTO')) { verifyCrypto($status['backend']===getenv('WAKAND_TEST_CRYPTO'),'requested crypto backend'); }
 verifyCrypto($status['available'] && $status['self_test'],'public known-answer vector');
 verifyCrypto($status['backend']===($native ? 'native' : 'sodium_compat'),'actual runtime selection');
 if ($native) { verifyCrypto(!class_exists('ParagonIE_Sodium_Compat',false),'native mode avoids loading polyfill'); }
@@ -53,4 +54,4 @@ foreach ([256,2048,16384] as $bytes) {
     }
     sort($times); $bench[]=['synthetic_token_bytes'=>$bytes,'roundtrip_median_ms'=>round($times[2],3),'roundtrip_max_ms'=>round($times[4],3)];
 }
-echo json_encode(['passed'=>true,'crypto'=>$status,'native_polyfill_byte_compatibility'=>true,'benchmarks'=>$bench],JSON_PRETTY_PRINT).PHP_EOL;
+echo json_encode(['passed'=>true,'php_version'=>PHP_VERSION,'crypto'=>$status,'native_polyfill_byte_compatibility'=>true,'benchmarks'=>$bench],JSON_PRETTY_PRINT).PHP_EOL;

@@ -53,7 +53,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y php8.3-cli php8.3-mysql php8.3-curl
           if [ "$WAKAND_TEST_CRYPTO" = sodium_compat ]; then
-            php -n -d extension=pdo.so -d extension=pdo_mysql.so -d extension=curl.so authWeb/tests/runtime_test.php
+            docker build -f authWeb/tests/Dockerfile.crypto -t wakand-crypto-test .
+            docker run --rm --network host -v "$PWD:$PWD" -w "$PWD" -e WAKAND_TEST_CRYPTO wakand-crypto-test php -n -d extension=pdo_mysql.so authWeb/tests/runtime_test.php
           else
             php authWeb/tests/runtime_test.php
           fi
@@ -68,6 +69,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y php8.3-cli php8.3-curl
+          docker build -f authWeb/tests/Dockerfile.crypto -t wakand-crypto-test .
       - name: Validate PHP and deployment boundaries
         run: |
           find authWeb -name '*.php' -print0 | xargs -0 -r -n1 php -l
@@ -75,16 +77,16 @@ jobs:
           php authWeb/tests/config_test.php
           php authWeb/tests/admin_test.php
           php authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-native.json
-          php -n authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-polyfill.json
-          php -n authWeb/tests/crypto_missing_test.php
-          php -n authWeb/tests/admin_test.php
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" -e WAKAND_TEST_CRYPTO=sodium_compat wakand-crypto-test php -n authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-polyfill.json
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/crypto_missing_test.php
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/admin_test.php
       - name: Check PHP HTTP response
         shell: bash
         run: |
           mkdir -p /tmp/wakand-auth-site/android/wakAnd
           FTP_SERVER=yui.eng.pro FTP_SERVER_DIR=/android/wakAnd/ python3 authWeb/scripts/deploy.py
           cp -a authWeb/dist/. /tmp/wakand-auth-site/android/wakAnd/
-          php -n -r 'require "/tmp/wakand-auth-site/android/wakAnd/_core.php"; if (!WakAnd\Auth\tokenCryptoStatus()["available"]) { exit(1); }'
+          docker run --rm -v /tmp/wakand-auth-site:/site:ro wakand-crypto-test php -n -r 'require "/site/android/wakAnd/_core.php"; $s=WakAnd\Auth\tokenCryptoStatus(); if (!$s["available"] || $s["backend"]!=="sodium_compat") { exit(1); }'
           php -S 127.0.0.1:8080 -t /tmp/wakand-auth-site > /tmp/wakand-auth-php.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
