@@ -80,6 +80,9 @@ PHPが非公開フォルダへ書けない場合はprivate_storage_unavailable�
    設定・鍵が未完成でも、指定済みDBホストへのサーバー内接続で確認できる。
    この測定はユーザー名・DBパスワードやクライアントパケットを送らず接続を閉じる。
    trueは証明書検証や暗号化接続成功を意味しない。実接続のtls_encryptedと分けて扱う。
+   sodium_module_availableはPHPのextension_dirに読取可能なsodium.soがあるかだけを返す。
+   falseならphp.iniへextension=sodium.soを追加するだけでは解決しないため、提供元へ確認する。
+   DB/schemaの読取診断はpdo_mysqlだけで行う。curl/sodiumがfalseなら通常OAuthは503を維持し、稼働を開始しない。
 2. configuration/database/schemaのtrueを確認する。
    requiredではtls_encrypted=trueも必要。provider_internalの暗号化有無は実測結果として記録する。
    schema不一致はphpMyAdminで既存構造・適用ファイル・登録済みchecksumを照合する。

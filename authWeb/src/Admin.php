@@ -94,13 +94,16 @@ function inspectRuntime(callable $load, array $checksums): array
 {
     $result=['extensions'=>['pdo_mysql'=>extension_loaded('pdo_mysql'),'curl'=>extension_loaded('curl'),'sodium'=>extension_loaded('sodium')],
         'configuration'=>false,'database'=>false,'schema'=>false,'tls_encrypted'=>false,'tls_mode'=>null,'maintenance'=>true,
-        'operations_in_progress'=>null,'operations_expired'=>null,'revocation_pending'=>null,'database_tls_advertised'=>null];
+        'operations_in_progress'=>null,'operations_expired'=>null,'revocation_pending'=>null,'database_tls_advertised'=>null,
+        'sodium_module_available'=>is_readable(rtrim((string)ini_get('extension_dir'),DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'sodium.so')];
     try {
         $config=$load(); $result['maintenance']=($config['maintenance'] ?? true) !== false;
         if (($config['database']['host'] ?? '')==='mysql50009.db.sakura.ne.jp') { $result['database_tls_advertised']=probeDatabaseTls(); }
         $config['maintenance']=false; // This does not edit settings or enable ordinary endpoints.
         $config=runtimeConfig($config); $result['configuration']=true; $result['tls_mode']=$config['database']['tls_mode'];
-        if (in_array(false,$result['extensions'],true)) { return $result; }
+        // Read-only DB/schema checks do not decrypt tokens or contact the OAuth provider.
+        // Report their readiness independently of curl/sodium; ordinary endpoints still require all three.
+        if (!$result['extensions']['pdo_mysql']) { return $result; }
         $db=connectDatabase($config); $result['database']=true;
         $ssl=$db->query("SHOW SESSION STATUS LIKE 'Ssl_cipher'")->fetch(); $result['tls_encrypted']=($ssl['Value'] ?? '') !== '';
         $repo=new Repository($db,$checksums); $result['schema']=true;
