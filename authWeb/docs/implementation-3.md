@@ -22,7 +22,15 @@ AndroidはKeystore + noBackupFilesDir + AtomicFileで端末資格情報/access t
 
 管理者申告: 初期4テーブル作成済み、version=1とチェックサム登録済み。
 サーバーからの読み取り照合はまだ行っていない。既存DDLの再インポート・DROPは不要。
-DB設定・暗号鍵は未設定、PHPからのDB接続・TLSは未確認。
+2026-10-14 JST実測: 非公開設定・サーバー生成鍵の参照はconfiguration=true。
+PHPからのDB接続とschema照合は成功し、version/checksum・4 InnoDBテーブル・外部キーを確認。
+処理中・期限超過・失効保留件数はいずれも0。初期DDLの再実行・更改は行っていない。
+MySQL greetingのTLS対応通知はfalse。管理者の明示選択によりprovider_internalを使用し、
+実接続のtls_encrypted=falseを確認。TLS成功とは扱わない。maintenance=trueを維持している。
+pdo_mysql/curlはtrue、sodiumはfalse、extension_dir内のsodium.soも読取不可。
+暗号方式を変更したり、必須拡張の検証を迂回したりせず、PHP環境の対応確認を待つ。
+CGIPassAuth Onの配置後、期限付き管理APIの認証とサーバー内鍵生成は成功。
+callback/app/complete経路は本番HTTPで404のまま。独立CIのApache経路成功と区別する。
 開発用OAuthアプリ/DB/URLは未払い出し。自動試験はモック提供元と独立MySQL 8.0のみ。
 
 ## 管理者が行う追加設定（サーバーCLI不要）
@@ -39,7 +47,8 @@ DB設定・暗号鍵は未設定、PHPからのDB接続・TLSは未確認。
   生成した実鍵のgenerated-keys.phpは削除しない。
 
 秘密値を出力せず、管理者によるFTP設定以外にDB接続情報を持ち出さない。
-PHPの非公開フォルダへの書込権限と、実環境での管理画面動作は未確認。
+PHPの非公開フォルダへの書込と管理APIの動作は2026-10-14に確認済み。
+生成鍵は権限600で保存され、値の表示・既存鍵上書きは行っていない。
 本番DBへの外部接続・DDL再実行・DROPは行わない。CLI用スクリプトは利用可能な環境の補助手段として残す。
 
 schema診断はversion・既知DDL checksum・MySQL 8.0・4 InnoDBテーブル・外部キーを照合する。
