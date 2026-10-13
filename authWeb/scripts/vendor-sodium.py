@@ -9,6 +9,7 @@ import zipfile
 VERSION = '2.5.2'
 COMMIT = '3246b36803c177847e677862fedeb7f937869adb'
 TAG_OBJECT = '5cbae9d0ad987e0104e390d74cca92a128777aa8'
+ARCHIVE_SHA256 = '7351bd9281771223b7bdb1763cfe5b9f0f38689ea49a9e3649a41b6034c64750'
 URL = f'https://codeload.github.com/paragonie/sodium_compat/zip/{COMMIT}'
 
 
@@ -20,6 +21,8 @@ def vendor(root):
         data = response.read(8 * 1024 * 1024 + 1)
     if len(data) > 8 * 1024 * 1024:
         raise ValueError('Archive too large')
+    if hashlib.sha256(data).hexdigest() != ARCHIVE_SHA256:
+        raise ValueError('Archive checksum does not match reviewed bytes')
     files = {}
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         for entry in archive.infolist():
