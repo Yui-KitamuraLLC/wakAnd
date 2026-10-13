@@ -34,7 +34,9 @@ GitHub 側の方針が変わった場合は、このファイルも更新して�
   `authWeb/schema/001_oauth_mysql.sql`。設計完了と本番導入・実疎通を区別する。
 - DBは管理者が用意したMySQL 8.0を利用。契約レンタルサーバー内から接続する。
   初期4テーブルとversion/checksum登録は管理者申告で済み。再作成・DROPは行わない。
-  #3実装・管理者確認は `authWeb/docs/implementation-3.md`。DB設定・暗号鍵・PHP接続/TLSは未確認。
+  #3実装・管理者確認は `authWeb/docs/implementation-3.md`。2026-10-14に非公開鍵生成・設定参照・PHPのDB/schema照合を確認。
+  管理者がprovider_internalを明示採用し、実接続はTLS暗号化なし。maintenance=trueを保持。
+  PHP8.3でもsodiumが未提供のため通常OAuthは未稼働。暗号方式の変更検討は `authWeb/docs/aes-gcm-proposal.md`。
   管理者の標準手順は `authWeb/docs/browser-admin.md`（FFFTP＋ブラウザ）。サーバーCLIを必須にしない。
   本番DBへローカルPC・GitHub Actionsから接続しない。CIでは独立したテストDBを使う。
 
