@@ -37,6 +37,44 @@ authWeb/
 
 ## 認証構成案
 
+### 本番の秘密設定
+
+WakaTimeアプリは既存登録を流用し、client_idは `pJDPWyzHvrc7iconHrnmrPaa`。
+管理者が `config/php.config.example.php` をサーバーの **`~/.php.config`** として
+配置し、サーバー上のコピーだけにApp Secretを記入する。`~`はホームディレクトリを
+表し、`/.php.config`（OSルート）とは異なる。既存ファイルがある場合は上書きせず
+返却する配列へ `wakand` セクションを統合する。
+
+- ファイルは `~/www/` の外。UNIX権限はまず600とし、PHP実行ユーザーに読み取りが
+  必要な場合は所有者・グループに合わせて調整する。公開ディレクトリへ移動しない。
+- `client_secret` のプレースホルダーだけを置換する。PHPの単一引用符内では
+  バックスラッシュと単一引用符をそれぞれ `\\` と `\'` にエスケープする。
+- 実Secret入りファイルはGit・CI転送物へ入れない。NASの控えは管理者が手動で保管する。
+- PHPは `~` を自動展開しない。実装時は確定したホームの絶対パスを渡す。
+  WebリクエストのパラメーターやHostヘッダーから設定ファイルのパスを組み立てない。
+- `src/Config.php` の読み込み関数は秘密設定と `~/www/` の絶対パスを受け取り、
+  シンボリックリンク解決後に公開領域内を拒否する。欠落・未編集・不正な設定は
+  秘密値を含まないエラーとして扱う。
+- 読み込み関数は後続OAuth実装用。現行の公開用index.phpにはまだ接続せず、
+  サーバー上の絶対パス・PHPのopen_basedir制限・読み取り権限は未確認。
+  初期FTP CIは引き続きpublic内の許可ファイルだけを配布する。
+
+[環境パス資料](https://faq.interlink.or.jp/faq2/View/md.aspx?id=999&view)では
+公開領域は `/home/アカウント名/www/`、PHPコマンドは `/usr/local/bin/php`。
+管理画面のホーム名を当てはめた配置案は以下（PHPからの実読取は別途確認）:
+
+```text
+/home/yui-kitamura/.php.config     管理者が手動配置する秘密設定
+/home/yui-kitamura/www/            公開領域全体。秘密設定を置かない
+```
+
+資料の755/705は公開実行ファイル・ディレクトリ向けであり、秘密設定へそのまま
+適用しない。読み込み用の `.php.config` はWeb実行するファイルではないため、
+`.php` 拡張子へ変更する必要はない。URLの `/android/`、FTPの `/android/` と
+OS上の `/home/...` を混同しない。ドメイン別公開ディレクトリの対応は既存設定に従う。
+
+### 認証の責務
+
 - PHP 8.3以上（新規環境は8.4以上を推奨）、外部HTTPS通信、SQLiteまたはMySQL。
 - client_secretと暗号化したrefresh tokenはサーバー、access tokenと
   端末別バックエンド認証情報はAndroidに保持する。

@@ -26,6 +26,7 @@ jobs:
         run: |
           find authWeb -name '*.php' -print0 | xargs -0 -r -n1 php -l
           python3 -m unittest discover -s authWeb/tests -v
+          php authWeb/tests/config_test.php
       - name: Check PHP HTTP response
         shell: bash
         run: |
