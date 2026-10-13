@@ -87,6 +87,7 @@
     <string name="oauth_disconnect_confirm">この端末でOAuthの利用を停止し、連携を失効しますか？オフライン時は接続できるまで解除要求を保持します。</string>
     <string name="oauth_checking">連携状態を確認中…</string>
     <string name="oauth_active">WakaTime OAuth連携済み。</string>
+    <string name="oauth_active_confirmation">WakaTime OAuth連携済みです。以前の連携を復元できなかったため、WakaTimeの設定で確認・解除してください。</string>
     <string name="oauth_pending">ブラウザでの認可待ちです。戻ってから再確認してください。</string>
     <string name="oauth_reauth">WakaTimeの再認可が必要です。</string>
     <string name="oauth_unlinked">WakaTime OAuthは未連携です。</string>

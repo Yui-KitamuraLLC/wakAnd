@@ -31,7 +31,10 @@ public class OAuthActivity extends AppCompatActivity {
         }));
         check.setOnClickListener(view -> execute(() -> { manager.complete(); manager.drainRevocations(); }));
         disconnect.setOnClickListener(view -> new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setMessage(R.string.oauth_disconnect_confirm).setPositiveButton(R.string.yes, (dialog, which) -> execute(manager::disconnect))
+                .setMessage(R.string.oauth_disconnect_confirm).setPositiveButton(R.string.yes, (dialog, which) -> {
+                    try { manager.stopLocal(); execute(manager::drainRevocations); }
+                    catch (OAuthManager.Failure error) { status.setText(R.string.oauth_connection_failed); }
+                })
                 .setNegativeButton(R.string.no, null).show());
     }
     @Override protected void onResume() {
@@ -65,6 +68,7 @@ public class OAuthActivity extends AppCompatActivity {
                 int resource;
                 switch (state) {
                     case "active": resource = R.string.oauth_active; break;
+                    case "active_confirmation_required": resource = R.string.oauth_active_confirmation; break;
                     case "pending": resource = R.string.oauth_pending; break;
                     case "reauth_required": resource = R.string.oauth_reauth; break;
                     case "disconnect_pending": resource = R.string.oauth_disconnect_pending; break;

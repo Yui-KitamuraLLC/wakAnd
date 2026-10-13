@@ -96,6 +96,7 @@
     <string name="oauth_disconnect_confirm">Stop using OAuth on this device and revoke this connection? Offline requests remain queued until a connection is available.</string>
     <string name="oauth_checking">Checking connection…</string>
     <string name="oauth_active">WakaTime OAuth connected.</string>
+    <string name="oauth_active_confirmation">WakaTime OAuth connected. A previous connection could not be recovered; check and revoke it in WakaTime settings.</string>
     <string name="oauth_pending">Waiting for browser authorization. Return here and check again.</string>
     <string name="oauth_reauth">WakaTime authorization is required again.</string>
     <string name="oauth_unlinked">WakaTime OAuth is not connected.</string>

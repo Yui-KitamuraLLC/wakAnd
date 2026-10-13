@@ -16,7 +16,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 /** One atomic, encrypted document in noBackupFilesDir, including the revocation queue. */
-final class OAuthStore {
+final class OAuthStore implements OAuthManager.StateStore {
     static final Object LOCK = new Object();
     private static final String ALIAS = "wakand_official_oauth_v1";
     private final AtomicFile file;
@@ -33,7 +33,7 @@ final class OAuthStore {
         }
         return (SecretKey) store.getKey(ALIAS, null);
     }
-    JSONObject read() throws Exception {
+    public JSONObject read() throws Exception {
         if (!file.getBaseFile().exists()) return new JSONObject();
         byte[] bytes = file.readFully();
         if (bytes.length < 29) throw new IllegalStateException("reauth_required");
@@ -42,7 +42,7 @@ final class OAuthStore {
         cipher.updateAAD(ALIAS.getBytes(StandardCharsets.UTF_8));
         return new JSONObject(new String(cipher.doFinal(Arrays.copyOfRange(bytes, 12, bytes.length)), StandardCharsets.UTF_8));
     }
-    void write(JSONObject document) throws Exception {
+    public void write(JSONObject document) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE, key(true));
         cipher.updateAAD(ALIAS.getBytes(StandardCharsets.UTF_8));
         byte[] encrypted = cipher.doFinal(document.toString().getBytes(StandardCharsets.UTF_8));

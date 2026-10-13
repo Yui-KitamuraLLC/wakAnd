@@ -11,17 +11,28 @@ import java.nio.charset.StandardCharsets;
 
 /** Call network methods off the UI thread. No provider refresh token is stored on Android. */
 public final class OAuthManager {
+    interface StateStore { JSONObject read() throws Exception; void write(JSONObject value) throws Exception; }
+    interface RequestTransport { JSONObject post(String path, JSONObject body, JSONObject credentials) throws Failure; }
+    private static final Object NETWORK_LOCK = new Object();
     public static final class Failure extends Exception {
         public final String code;
         Failure(String code) { super(code); this.code = code; }
     }
-    private final OAuthStore store;
-    public OAuthManager(Context context) { store = new OAuthStore(context.getApplicationContext()); }
+    private final StateStore store;
+    private final RequestTransport transport;
+    public OAuthManager(Context context) { this(new OAuthStore(context.getApplicationContext()), null); }
+    OAuthManager(StateStore store, RequestTransport transport) { this.store = store; this.transport = transport; }
     private JSONObject read() throws Failure {
         try { return store.read(); } catch (Exception error) { throw new Failure("reauth_required"); }
     }
     private void write(JSONObject value) throws Failure {
         try { store.write(value); } catch (Exception error) { throw new Failure("storage_unavailable"); }
+    }
+    private void commitResponse(JSONObject value, String before) throws Failure {
+        synchronized (OAuthStore.LOCK) {
+            if (!read().toString().equals(before)) throw new Failure("link_disconnected");
+            write(value);
+        }
     }
     private static JSONObject response(HttpURLConnection connection, int status) throws Exception {
         try (InputStream stream = status < 400 ? connection.getInputStream() : connection.getErrorStream()) {
@@ -35,6 +46,7 @@ public final class OAuthManager {
         }
     }
     private JSONObject post(String path, JSONObject body, JSONObject credentials) throws Failure {
+        if (transport != null) return transport.post(path, body, credentials);
         HttpURLConnection connection = null;
         try {
             // path is a private, fixed call-site constant. Never follow redirects with credentials.
@@ -68,27 +80,35 @@ public final class OAuthManager {
             try {
                 JSONObject doc = read();
                 if (doc.has("pending")) return "pending";
-                if (doc.has("active")) return doc.getJSONObject("active").optString("status", "active");
+                if (doc.has("active")) {
+                    String state = doc.getJSONObject("active").optString("status", "active");
+                    return "active".equals(state) && doc.optBoolean("provider_confirmation_required") ? "active_confirmation_required" : state;
+                }
+                if (doc.optBoolean("reauth_required")) return "reauth_required";
                 if (doc.optBoolean("provider_confirmation_required")) return "provider_confirmation_required";
                 return doc.optJSONArray("revocations") != null && doc.optJSONArray("revocations").length() > 0 ? "disconnect_pending" : "unlinked";
             } catch (Exception error) { return "reauth_required"; }
         }
     }
     public String begin() throws Failure {
-        synchronized (OAuthStore.LOCK) {
+        synchronized (NETWORK_LOCK) {
             try {
                 JSONObject doc;
-                try { doc = read(); } catch (Failure error) { doc = new JSONObject(); }
-                // A damaged/absent Keystore requires reauthorization, never clearing app settings.
-                JSONObject oldPending = doc.optJSONObject("pending");
-                if (oldPending != null && oldPending.has("link_id")) queue(doc, oldPending);
-                JSONObject pending = new JSONObject().put("secret", OAuthPolicy.randomSecret()).put("verifier", OAuthPolicy.randomSecret());
-                doc.put("pending", pending); write(doc); // Persist before the start request.
+                JSONObject pending;
+                synchronized (OAuthStore.LOCK) {
+                    try { doc = read(); } catch (Failure error) { doc = new JSONObject().put("provider_confirmation_required", true); }
+                    // A damaged/absent Keystore requires reauthorization, never clearing app settings.
+                    JSONObject oldPending = doc.optJSONObject("pending");
+                    if (oldPending != null && oldPending.has("link_id")) queue(doc, oldPending);
+                    pending = new JSONObject().put("secret", OAuthPolicy.randomSecret()).put("verifier", OAuthPolicy.randomSecret());
+                    doc.put("pending", pending); write(doc); // Persist before the start request.
+                }
+                String before = doc.toString();
                 JSONObject result = post("v1/link/start", new JSONObject().put("device_secret_hash", OAuthPolicy.hash(pending.getString("secret"), true))
                         .put("verifier_challenge", OAuthPolicy.hash(pending.getString("verifier"), false)), null);
                 String id = result.getString("link_id"), url = result.getString("browser_url");
                 if (!OAuthPolicy.launch(url, id)) throw new Failure("invalid_response");
-                pending.put("link_id", id).put("expires_at", result.getLong("expires_at")); write(doc); return url;
+                pending.put("link_id", id).put("expires_at", result.getLong("expires_at")); commitResponse(doc, before); return url;
             } catch (Failure error) { throw error; } catch (Exception error) { throw new Failure("storage_unavailable"); }
         }
     }
@@ -115,18 +135,21 @@ public final class OAuthManager {
                 .put("generation", result.getLong("generation")).put("granted_scope", result.getString("granted_scope")).put("status", "active");
     }
     public void complete() throws Failure {
-        synchronized (OAuthStore.LOCK) {
+        synchronized (NETWORK_LOCK) {
             try {
-                JSONObject doc = read(), pending = doc.optJSONObject("pending");
+                JSONObject doc;
+                synchronized (OAuthStore.LOCK) { doc = read(); }
+                JSONObject pending = doc.optJSONObject("pending");
                 if (pending == null || !pending.has("link_id")) return;
+                String before = doc.toString();
                 JSONObject result = post("v1/link/complete", new JSONObject().put("verifier", pending.getString("verifier")), pending);
                 if (result.optBoolean("pending")) throw new Failure("authorization_pending");
                 JSONObject active = credentials(pending); acceptToken(active, result);
                 JSONObject previous = doc.optJSONObject("active"); if (previous != null) queue(doc, previous);
-                doc.put("active", active); doc.remove("pending"); write(doc);
+                doc.put("active", active); doc.remove("pending"); doc.remove("reauth_required"); commitResponse(doc, before);
             } catch (Failure error) {
                 if ("link_expired".equals(error.code) || "reauth_required".equals(error.code) || "link_disconnected".equals(error.code)) {
-                    try { JSONObject doc = read(), pending = doc.optJSONObject("pending"); if (pending != null && pending.has("link_id")) queue(doc, pending); doc.remove("pending"); write(doc); }
+                    try { synchronized (OAuthStore.LOCK) { JSONObject doc = read(), pending = doc.optJSONObject("pending"); if (pending != null && pending.has("link_id")) { queue(doc, pending); doc.put("reauth_required", true); } doc.remove("pending"); write(doc); } }
                     catch (Exception ignored) { /* Keep persisted pending on storage failure. */ }
                 }
                 throw error;
@@ -137,26 +160,33 @@ public final class OAuthManager {
     /** Adapter for #4. The caller must also check the selected target immediately before sending. */
     public String accessToken(String apiUrl, boolean unauthorized, long observedGeneration) throws Failure {
         if (!OAuthPolicy.officialApi(apiUrl)) throw new Failure("invalid_destination");
-        synchronized (OAuthStore.LOCK) {
+        synchronized (NETWORK_LOCK) {
             try {
-                JSONObject doc = read(), active = doc.optJSONObject("active");
+                JSONObject doc;
+                synchronized (OAuthStore.LOCK) { doc = read(); }
+                JSONObject active = doc.optJSONObject("active");
                 if (active == null || !"active".equals(active.optString("status"))) throw new Failure("reauth_required");
                 long generation = active.getLong("generation");
                 boolean sameUnauthorized = unauthorized && generation == observedGeneration;
                 if (sameUnauthorized || active.getLong("expires_at") <= System.currentTimeMillis() / 1000 + 60) {
+                    String before = doc.toString();
                     try {
                         JSONObject result = post("v1/token/refresh", new JSONObject().put("observed_generation", generation)
                                 .put("reason", sameUnauthorized ? "unauthorized" : "expired"), active);
                         if (result.getLong("generation") < generation) throw new Failure("invalid_response");
-                        acceptToken(active, result); write(doc);
+                        acceptToken(active, result); commitResponse(doc, before);
                     } catch (Failure error) {
                         if ("reauth_required".equals(error.code) || "link_disconnected".equals(error.code) || "device_unauthorized".equals(error.code)) {
-                            active.remove("access_token"); active.put("status", "reauth_required"); write(doc);
+                            active.remove("access_token"); active.put("status", "reauth_required"); commitResponse(doc, before);
                         }
                         throw error;
                     }
                 }
-                return active.getString("access_token");
+                synchronized (OAuthStore.LOCK) {
+                    JSONObject current = read().optJSONObject("active");
+                    if (current == null || !current.optString("link_id").equals(active.getString("link_id"))) throw new Failure("link_disconnected");
+                    return current.getString("access_token");
+                }
             } catch (Failure error) { throw error; } catch (Exception error) { throw new Failure("storage_unavailable"); }
         }
     }
@@ -167,30 +197,42 @@ public final class OAuthManager {
         }
     }
     public void disconnect() throws Failure {
+        stopLocal();
+        drainRevocations();
+    }
+    public void stopLocal() throws Failure {
         synchronized (OAuthStore.LOCK) {
             try {
                 JSONObject doc = read(), active = doc.optJSONObject("active"), pending = doc.optJSONObject("pending");
                 if (active != null) queue(doc, active);
                 if (pending != null && pending.has("link_id")) queue(doc, pending);
-                doc.remove("active"); doc.remove("pending"); write(doc); // Local use stops before any network.
+                doc.remove("active"); doc.remove("pending"); doc.remove("reauth_required"); write(doc); // Local use stops before any network.
             } catch (Failure error) { throw error; } catch (Exception error) { throw new Failure("storage_unavailable"); }
         }
-        drainRevocations();
     }
     /** At most one queued request per call; credentials never return to active use. */
     public void drainRevocations() throws Failure {
-        synchronized (OAuthStore.LOCK) {
+        synchronized (NETWORK_LOCK) {
             try {
-                JSONObject doc = read(); JSONArray queue = doc.optJSONArray("revocations");
+                JSONObject doc;
+                synchronized (OAuthStore.LOCK) { doc = read(); }
+                JSONArray queue = doc.optJSONArray("revocations");
                 if (queue == null || queue.length() == 0) return;
                 JSONObject row = queue.getJSONObject(0);
                 JSONObject result = post("v1/link/disconnect", new JSONObject(), row);
-                if (result.optBoolean("provider_confirmation_required")) doc.put("provider_confirmation_required", true);
-                if (!result.optBoolean("revocation_pending")) { queue.remove(0); write(doc); }
-                else write(doc);
+                synchronized (OAuthStore.LOCK) {
+                    doc = read(); queue = doc.optJSONArray("revocations");
+                    if (result.optBoolean("provider_confirmation_required")) doc.put("provider_confirmation_required", true);
+                    if (!result.optBoolean("revocation_pending") && queue != null) {
+                        for (int i = 0; i < queue.length(); i++) {
+                            if (row.getString("link_id").equals(queue.getJSONObject(i).optString("link_id"))) { queue.remove(i); break; }
+                        }
+                    }
+                    write(doc);
+                }
             } catch (Failure error) {
                 if ("device_unauthorized".equals(error.code)) {
-                    try { JSONObject doc = read(); doc.put("provider_confirmation_required", true); doc.getJSONArray("revocations").remove(0); write(doc); }
+                    try { synchronized (OAuthStore.LOCK) { JSONObject doc = read(); doc.put("provider_confirmation_required", true); doc.getJSONArray("revocations").remove(0); write(doc); } }
                     catch (Exception ignored) { /* Retry safely next time. */ }
                 }
                 throw error;
