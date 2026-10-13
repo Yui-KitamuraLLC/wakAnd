@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace WakAnd\Auth;
+require_once __DIR__ . '/_crypto.php';
 
 final class ApiError extends \RuntimeException
 {
@@ -69,6 +70,7 @@ final class TokenCipher
     { return 'wakand|' . $this->config['environment'] . '|' . encodeId($row['link_id']) . '|' . $row['generation'] . '|' . $row['token_key_id']; }
     public function encrypt(array $bundle, array $row): string
     {
+        requireTokenCrypto();
         $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
         $key = $this->key($row['token_key_id']);
         return $nonce . sodium_crypto_aead_xchacha20poly1305_ietf_encrypt(json_encode($bundle, JSON_THROW_ON_ERROR), $this->aad($row), $nonce, $key);
@@ -82,6 +84,7 @@ final class TokenCipher
     public function decrypt(array $row): array
     {
         try {
+            requireTokenCrypto();
             $blob = $row['token_bundle'];
             if (!is_string($blob) || strlen($blob) < 41) { throw new \RuntimeException(); }
             $plain = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(substr($blob, 24), $this->aad($row), substr($blob, 0, 24), $this->key($row['token_key_id']));

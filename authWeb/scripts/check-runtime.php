@@ -5,9 +5,9 @@ ini_set('display_errors','0'); ini_set('log_errors','0');
 require __DIR__ . '/../src/Config.php';
 require __DIR__ . '/../src/Core.php';
 require __DIR__ . '/../src/Database.php';
-$result=['extensions'=>false,'configuration'=>false,'database'=>false,'schema'=>false,'tls_encrypted'=>false,'tls_mode'=>null];
+$result=['extensions'=>false,'crypto'=>\WakAnd\Auth\tokenCryptoStatus(),'configuration'=>false,'database'=>false,'schema'=>false,'tls_encrypted'=>false,'tls_mode'=>null];
 try {
-    $result['extensions']=extension_loaded('pdo_mysql') && extension_loaded('curl') && extension_loaded('sodium');
+    $result['extensions']=extension_loaded('pdo_mysql') && extension_loaded('curl') && $result['crypto']['available'];
     if (!$result['extensions']) { throw new RuntimeException(); }
     $config=\WakAnd\Auth\loadConfig('/home/yui-kitamura/.config/wakand/oauth.php','/home/yui-kitamura/www');
     $config['maintenance']=false; // Local diagnostics only; do not rewrite the private file.

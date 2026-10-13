@@ -28,9 +28,10 @@ function parseBody(string $raw, array $fields): array
 }
 function makeService(): OAuthService
 {
-    foreach (['pdo_mysql','curl','sodium'] as $extension) {
+    foreach (['pdo_mysql','curl'] as $extension) {
         if (!extension_loaded($extension)) { throw new ApiError(503,'service_unavailable'); }
     }
+    requireTokenCrypto();
     $config=runtimeConfig(loadConfig('/home/yui-kitamura/.config/wakand/oauth.php','/home/yui-kitamura/www'));
     $checksums=require __DIR__ . '/_schema.php';
     return new OAuthService(new Repository(connectDatabase($config),$checksums),new WakaTimeProvider($config),$config);

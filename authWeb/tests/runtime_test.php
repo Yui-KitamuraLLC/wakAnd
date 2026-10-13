@@ -13,6 +13,9 @@ use function WakAnd\Auth\parseBody;
 use function WakAnd\Auth\tokenBundle;
 
 function check(bool $ok, string $label): void { if (!$ok) { throw new LogicException($label); } }
+if ($backend=getenv('WAKAND_TEST_CRYPTO')) {
+    check(\WakAnd\Auth\tokenCryptoStatus()['backend']===$backend,'actual requested crypto backend');
+}
 function rejected(callable $work, string $code): void {
     try { $work(); } catch (ApiError $e) { check($e->getMessage()===$code,'wrong error classification'); return; }
     throw new LogicException('expected rejection');

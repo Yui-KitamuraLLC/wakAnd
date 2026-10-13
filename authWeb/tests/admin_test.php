@@ -30,6 +30,8 @@ rejects(fn()=>authorizeAdmin($access,array_diff_key($server,['HTTP_AUTHORIZATION
 ob_start();
 $flags=inspectRuntime(static function (): array { throw new RuntimeException('FAKE_SECRET_NEVER_RETURN'); },[]);
 $output=ob_get_clean(); verify($output==='' && !str_contains(json_encode($flags),'FAKE_SECRET'));
+verify($flags['crypto']['available'] && $flags['crypto']['self_test']);
+verify($flags['crypto']['backend']===(extension_loaded('sodium') ? 'native' : 'sodium_compat'));
 $greeting="\x0a8.0-test\0" . pack('V',1) . 'abcdefgh' . "\0";
 verify(\WakAnd\Auth\mysqlTlsFromGreeting($greeting.pack('v',2048))===true);
 verify(\WakAnd\Auth\mysqlTlsFromGreeting($greeting.pack('v',512))===false);

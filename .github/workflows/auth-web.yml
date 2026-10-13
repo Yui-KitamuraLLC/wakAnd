@@ -14,6 +14,9 @@ permissions:
 jobs:
   validate-schema:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        crypto: [native, sodium_compat]
     services:
       mysql:
         image: mysql:8.0
@@ -44,10 +47,16 @@ jobs:
           test "$(mysql_test -e "SELECT COUNT(*) FROM oauth_schema_versions;")" = 0
           echo 'MySQL 8.0: four InnoDB tables and session foreign key verified; no production connection.'
       - name: Validate OAuth lifecycle with independent MySQL connections
+        env:
+          WAKAND_TEST_CRYPTO: ${{ matrix.crypto }}
         run: |
           sudo apt-get update
           sudo apt-get install -y php8.3-cli php8.3-mysql php8.3-curl
-          php authWeb/tests/runtime_test.php
+          if [ "$WAKAND_TEST_CRYPTO" = sodium_compat ]; then
+            php -n -d extension=pdo.so -d extension=pdo_mysql.so -d extension=curl.so authWeb/tests/runtime_test.php
+          else
+            php authWeb/tests/runtime_test.php
+          fi
 
   validate:
     runs-on: ubuntu-24.04
@@ -65,12 +74,17 @@ jobs:
           python3 -m unittest discover -s authWeb/tests -v
           php authWeb/tests/config_test.php
           php authWeb/tests/admin_test.php
+          php authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-native.json
+          php -n authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-polyfill.json
+          php -n authWeb/tests/crypto_missing_test.php
+          php -n authWeb/tests/admin_test.php
       - name: Check PHP HTTP response
         shell: bash
         run: |
           mkdir -p /tmp/wakand-auth-site/android/wakAnd
           FTP_SERVER=yui.eng.pro FTP_SERVER_DIR=/android/wakAnd/ python3 authWeb/scripts/deploy.py
           cp -a authWeb/dist/. /tmp/wakand-auth-site/android/wakAnd/
+          php -n -r 'require "/tmp/wakand-auth-site/android/wakAnd/_core.php"; if (!WakAnd\Auth\tokenCryptoStatus()["available"]) { exit(1); }'
           php -S 127.0.0.1:8080 -t /tmp/wakand-auth-site > /tmp/wakand-auth-php.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
@@ -90,6 +104,10 @@ jobs:
           sudo service apache2 restart
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_admin.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_crypto.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/autoload.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/LICENSE)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/src/Core/Curve25519/README.md)" = 403
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/admin.php)" = 400
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/.htaccess)" = 403
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
@@ -111,6 +129,13 @@ jobs:
           test "$(curl --silent --output /tmp/wakand-alias-callback.json --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
           python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-alias-callback.json").read_text())["error"] == "invalid_request"'
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/LICENSE)" = 403
+      - name: Save synthetic crypto verification and timings
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-crypto-verification
+          path: /tmp/wakand-crypto-*.json
+          if-no-files-found: error
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')
