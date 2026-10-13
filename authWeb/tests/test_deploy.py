@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,14 +17,28 @@ class DeploymentTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         (self.root / 'public').mkdir()
         (self.root / 'src').mkdir()
-        (self.root / 'src/Config.php').write_text('<?php // No secrets')
+        for source in ['Config', 'Core', 'Database', 'OAuthService', 'Http', 'Admin', '_crypto']:
+            (self.root / ('src/' + source + '.php')).write_text('<?php // No secrets')
+        (self.root / 'schema').mkdir()
+        (self.root / 'schema/001_oauth_mysql.sql').write_bytes(b'-- test schema\n')
         (self.root / 'public/index.php').write_text('<?php echo "test";')
         (self.root / 'secret.php').write_text('private')
         self.manifest(['index.php'])
+        self.vendor = self.root / 'src/_vendor/sodium_compat'
+        self.vendor.mkdir(parents=True)
+        for name in ['autoload.php', 'LICENSE']:
+            (self.vendor / name).write_bytes(b'reviewed dependency fixture')
+        self.vendor_manifest = {'package': 'paragonie/sodium_compat', 'version': '2.5.2',
+                                'commit': '3246b36803c177847e677862fedeb7f937869adb',
+                                'files': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in self.vendor.iterdir()}}
+        self.write_vendor_manifest()
         self.env = dict(FTP_SERVER='ftp.example.com', FTP_SERVER_DIR='/wakAnd/')
 
     def manifest(self, files):
         (self.root / 'deploy-files.json').write_text(json.dumps(files))
+
+    def write_vendor_manifest(self):
+        (self.root / 'sodium-compat-manifest.json').write_text(json.dumps(self.vendor_manifest))
 
     def test_only_explicit_public_files_are_uploaded(self):
         (self.root / 'public/config.local.php').write_text('not in allowlist')
@@ -53,10 +68,49 @@ class DeploymentTests(unittest.TestCase):
         (self.root / 'public/private.php').write_text('not public')
         self.env['FTP_SERVER_DIR'] = '/android/wakAnd/'
         output = deploy.stage(self.root, self.env)
-        self.assertEqual(sorted(p.name for p in output.iterdir()), ['_config.php', 'index.php'])
+        self.assertEqual(sorted(p.name for p in output.iterdir()), ['_admin.php', '_config.php', '_core.php', '_crypto.php', '_database.php', '_http.php', '_oauth.php', '_schema.php', '_vendor', 'index.php'])
         self.assertEqual((output / 'index.php').read_bytes(), (self.root / 'public/index.php').read_bytes())
+        self.assertEqual((output / '_vendor/sodium_compat/LICENSE').read_bytes(), (self.vendor / 'LICENSE').read_bytes())
         with self.assertRaises(FileExistsError):
             deploy.stage(self.root, self.env)
+
+    def test_dependency_tamper_or_extra_file_fails_before_staging(self):
+        (self.vendor / 'autoload.php').write_bytes(b'modified')
+        with self.assertRaises(ValueError):
+            deploy.stage(self.root, self.env)
+        self.assertFalse((self.root / 'dist').exists())
+        (self.vendor / 'autoload.php').write_bytes(b'reviewed dependency fixture')
+        (self.vendor / 'private.php').write_text('must not enter deployment')
+        with self.assertRaises(ValueError):
+            deploy.stage(self.root, self.env)
+        self.assertFalse((self.root / 'dist').exists())
+
+    def test_dependency_paths_and_version_are_rejected(self):
+        for name in ['../private.php', '/private.php', 'src/../../private.php', 'src\\file.php', '.env']:
+            with self.subTest(name=name):
+                self.vendor_manifest['files'] = {name: '0' * 64}
+                self.write_vendor_manifest()
+                with self.assertRaises(ValueError):
+                    deploy.vendor_plan(self.root)
+        self.vendor_manifest['version'] = 'unreviewed'
+        self.write_vendor_manifest()
+        with self.assertRaises(ValueError):
+            deploy.vendor_plan(self.root)
+
+    def test_real_dependency_is_complete_and_byte_identical(self):
+        root = Path(__file__).parents[1]
+        plan = deploy.vendor_plan(root)
+        self.assertEqual(len(plan), 49)
+        self.assertIn('_vendor/sodium_compat/LICENSE', [name for name, _ in plan])
+
+    def test_release_contains_no_schema_or_private_configuration(self):
+        root = Path(__file__).parents[1]
+        plan = [name for name, _ in deploy.upload_plan(root)]
+        self.assertEqual(sorted(plan), ['.htaccess', 'admin.php', 'config-check.php', 'index.php'])
+        self.assertNotIn('oauth.example.php', plan)
+        self.assertNotIn('001_oauth_mysql.sql', plan)
+        self.assertNotIn('admin-access.php', plan)
+        self.assertNotIn('generated-keys.php', plan)
 
 
 if __name__ == '__main__':

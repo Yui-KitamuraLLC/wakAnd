@@ -3,11 +3,13 @@
 Androidの `app/` と同階層の `authWeb/` でPHPバックエンドを管理する。
 公開URLは **https://yui.eng.pro/android/wakAnd/**。
 以前のサブドメイン案は廃止。URLパスの `wakAnd` の大文字小文字は維持する。
-関連issue: #2、#8、#9、#12。現在は配置・CIの土台のみでOAuthは未実装。
+関連issue: #2、#8、#9、#12。#3の実装・検収範囲は [実装手順](docs/implementation-3.md)、
+サーバーCLIを使わない設定・鍵生成・診断は [ブラウザ管理者手順](docs/browser-admin.md) を参照。
 
 認証・DBの実装契約は [OAuth基盤設計](docs/oauth-design.md) を参照。
 DBは管理者が用意したMySQL 8.0を使用する。
-[初期DDL](schema/001_oauth_mysql.sql) は設計成果物で、まだ本番に適用していない。
+[初期DDL](schema/001_oauth_mysql.sql) の4テーブルとversion/checksumは管理者申告で登録済み。2026-10-14にサーバー内PHPからDB接続・読取照合を確認。provider_internalでTLS暗号化なし。
+同梱ライブラリの本番適用はレビュー待ち。[ライブラリ配置手順](docs/sodium-compat-deployment.md)を参照。
 
 ## 配置とURL
 
@@ -34,8 +36,10 @@ authWeb/
 .github/workflows/auth-web.yml
 ```
 
-公開するのは許可リストにある `public/` 内のファイルと、秘密値を持たない
-`src/Config.php` をコピーした `_config.php`。設定・暗号鍵・DBは `~/www/` の外に置く。
+公開するのは許可リストの4ファイル、秘密値を持たない固定PHPランタイム・schema照合値、
+固定バージョンと全ファイルのSHA-256を確認したsodium_compat。合計61ファイル。
+ライブラリの直接HTTPアクセスは本ディレクトリの.htaccessで拒否する。
+admin.phpは非公開の期限付き管理用認証ファイルがない場合404で無効。設定・暗号鍵・DBは `~/www/` の外に置く。
 秘密設定の転送は管理者が手動で行い、このCIでは扱わない。
 配置確認ページは `oauth_ready: false` を返す。認証の稼働確認ではない。
 
@@ -51,7 +55,7 @@ WakaTimeアプリは既存登録を流用し、client_idは `pJDPWyzHvrc7iconHrn
 
 - ファイルは `~/www/` の外。UNIX権限はまず600とし、PHP実行ユーザーに読み取りが
   必要な場合は所有者・グループに合わせて調整する。公開ディレクトリへ移動しない。
-- `client_secret` のプレースホルダーだけを置換する。PHPの単一引用符内では
+- 既存のclient_secretは保持し、DB・鍵・maintenanceを追加する。値を記入する場合はPHPの単一引用符内では
   バックスラッシュと単一引用符をそれぞれ `\\` と `\'` にエスケープする。
 - 実Secret入りファイルはGit・CI転送物へ入れない。NASの控えは管理者が手動で保管する。
 - PHPは `~` を自動展開しない。実装時は確定したホームの絶対パスを渡す。
@@ -59,7 +63,7 @@ WakaTimeアプリは既存登録を流用し、client_idは `pJDPWyzHvrc7iconHrn
 - `src/Config.php` の読み込み関数は秘密設定と `~/www/` の絶対パスを受け取り、
   シンボリックリンク解決後に公開領域内を拒否する。欠落・未編集・不正な設定は
   秘密値を含まないエラーとして扱う。
-- 公開用index.phpは引き続き配置確認用。
+- index.phpのルートは配置確認用。OAuth経路はmaintenance・DB・鍵の検証後に実行する。
   `/android/wakAnd/config-check.php` は設定を読み込み、App ID・redirect URI・
   Secretの非空/未編集チェック結果だけを `configured` の真偽値で返す。
   値・秘密ファイルのパス・例外詳細は返さない。成功時200、失敗時503。
@@ -80,7 +84,8 @@ OS上の `/home/...` を混同しない。ドメイン別公開ディレクト�
 
 ### 認証の責務
 
-- PHP 8.3以上、外部HTTPS通信、PDO MySQL、sodium。拡張とDB接続は後続で実測する。
+- PHP 8.3以上、外部HTTPS通信、PDO MySQL。暗号処理はネイティブsodium、または同梱sodium_compat（64bit）。
+  実鍵や暗号方式の変更、サーバーへのComposer導入は不要。本番同梱版は配置後に実測する。
 - client_secretと暗号化したaccess/refresh tokenはサーバー、access tokenと
   端末別バックエンド認証情報はAndroidに保持する。
 - 認可・更新・解除はPHP経由、通常のWakaTime APIはAndroidから直接呼ぶ。
@@ -88,7 +93,7 @@ OS上の `/home/...` を混同しない。ドメイン別公開ディレクト�
   アクセス時に件数制限付きで削除する。無アクセス時の削除期限保証や
   失効失敗の自動再試行が必要になったら定期実行を追加する。
 
-予定経路（未実装。WakaTime側のcallback登録設定は保存済み）:
+認証経路（#3実装。WakaTime側のcallback登録設定は保存済み。本番実疎通は未確認）:
 
 | URLパス | 用途 |
 | --- | --- |
@@ -162,7 +167,7 @@ with:
 - 転送後に公開URLのJSON応答を確認する。PHPの実行が確認できるまで
   secretをサーバーへ配置しない。
 - 既存の配置確認PHPのFTP転送・GitHub CI・秘密設定読取は成功済み。
-  DB接続・DDL適用・OAuthの実疎通は未実施。
+  DDLとversion/checksumは管理者申告で登録済み。DB接続・schema照合はサーバー内PHPから確認済み。OAuthの実疎通は未実施。
 
 ローカル検証: `python -m unittest discover -s authWeb/tests -v`。
 PHPがある環境では `php -l authWeb/public/index.php`。

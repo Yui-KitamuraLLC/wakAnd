@@ -1,7 +1,10 @@
 # OAuth基盤設計・実装引き継ぎ
 
 2026-10-13。#2 / #10 / #11 / #12 → #3 / #4 / #5 / #6 / #13。
-これは設計。OAuthエンドポイント、DBテーブル、暗号鍵はまだ本番へ導入していない。
+これは設計。管理者申告で本番初期4テーブルとversion/checksum登録は済み。
+2026-10-14にPHPからのDB/schema読取照合・暗号鍵配置を確認。provider_internalでTLS暗号化なし。
+OAuth実疎通は未確認。暗号実装は同梱sodium_compat対応を追加し、本番適用前のレビュー待ち。
+実装と管理者向け後続手順は [#3実装](implementation-3.md) を参照。
 本番設定のPHP読み取りと既存CIのFTP配置は確認済み。
 
 ## 1. 配置と責務
@@ -53,7 +56,7 @@ PDO MySQL、utf8mb4、例外モード、ネイティブprepare、非永続接続
 FAQは契約サービス外からの接続禁止を明記するが、暗号化やプライベートIPまでは保証しない。
 サーバー内PHPから疎通し `Ssl_cipher` と証明書検証可否を確認。TLS対応時は証明書・ホスト名を検証して必須化。
 非対応の場合、運用が提供元の内部接続に依存することを管理者へ報告して `provider_internal` を明示採用する。
-接続失敗時にTLS検証を自動解除しない。現在は接続もTLSも未確認。
+接続失敗時にTLS検証を自動解除しない。実測ではprovider_internalで接続成功、TLS暗号化なし。
 
 ## 3. データモデル
 
@@ -74,7 +77,9 @@ verifierは32バイト乱数のbase64url（43文字）、challengeはそのASCII
 ハッシュ比較は定数時間比較。UUID・時刻・端末情報で秘密値を代用しない。
 
 token_bundleはJSON（access_token、refresh_token、token_type、実付与scope、expires_at）を
-XChaCha20-Poly1305で暗号化したBLOB。BLOBの先頭24バイトをnonce、残りを暗号文＋認証タグとする。
+XChaCha20-Poly1305で暗号化したBLOB。ネイティブsodiumを優先し、未提供時は
+アプリ内の固定sodium_compatを使う。両方式で既知ベクトルを検証し、暗号文形式・鍵・AADは共通。
+依存元・64bit条件・速度/監査の制約は [配置手順](sodium-compat-deployment.md) に記載。BLOBの先頭24バイトをnonce、残りを暗号文＋認証タグとする。
 暗号化ごとに新しいnonceを生成し、AADは `wakand|production|<link_id>|<generation>|<key_id>`。
 AADとDB行の対応を検証して、他行・他環境からの差し替えを拒否する。鍵はDBに保存しない。
 access_expires_at・granted_scopeを索引用/判定用に平文でも持つが、復号内容との一致を検証する。
@@ -171,7 +176,8 @@ disconnectは行ロック下でdisconnect_requested=1をcommitしてから202を
 リクエスト末尾の掃除は最大20行、外部失効は最大1件。DBで処理を予約してから実行し、競合を避ける。
 リクエスト全体の時間予算を守れないときは実行せず、次回へ持ち越す。
 無アクセス時の物理削除や上流失効完了日時は保証しない。pending件数/最古日時のみ秘密なしで管理者へ確認可能にする。
-CLIメンテナンスを別途実装すれば手動実行できる。cronの利用可否はOAuth開始の必須条件にしない。
+手動メンテナンスは期限付き管理認証で保護したブラウザ画面から実行できる。
+標準手順は `browser-admin.md`。CLIは利用可能な環境の補助手段で、cron/CLIを必須にしない。
 MySQLイベントは任意の補助とする。event_scheduler=ONとEVENT権限を確認してから別SQLで導入する。
 ルーチンを作るだけでは定期実行にならない。初期対象は期限切れrate bucketの削除に限定し、
 外部HTTPS失効・token復号はPHPへ残す。確認SQLと制約は `database-setup.md` に記載。
@@ -223,7 +229,7 @@ reauth_requiredへ移して、旧tokenを自動更新せず再認可を求める
 
 ## 9. 実装者への着手順と検証
 
-1. PHPのpdo_mysql/cURL/sodium、DBから見たバージョン/InnoDB/TLS/権限を秘密なしで確認。
+1. PHPのpdo_mysql/cURL、暗号backend/available/self_test、DBから見たバージョン/InnoDB/TLS/権限を秘密なしで確認。
 2. 管理者用設定ひな形・サーバー内の鍵生成手順を用意。DBの接続だけを確認し、DDLは手順に沿って適用。
 3. CIに独立MySQLを起動し、DDLとRepositoryの状態遷移・暗号化を検証。
 4. #3: start/launch/callback/complete、refresh/disconnect、Android Keystore・App Links。

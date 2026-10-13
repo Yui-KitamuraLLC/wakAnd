@@ -7,6 +7,8 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
+    <exclude domain="file" path="official_oauth_v1" />
+    <exclude domain="sharedpref" path="official_oauth.xml" />
     <!--
    <include domain="sharedpref" path="."/>
    <exclude domain="sharedpref" path="device.xml"/>
