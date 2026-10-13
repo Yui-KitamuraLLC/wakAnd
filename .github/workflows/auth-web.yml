@@ -68,6 +68,7 @@ jobs:
           server-dir: /android/wakAnd/
           state-name: .wakand-auth-sync-state.json
           dangerous-clean-slate: false
+          log-level: verbose
       - name: Verify deployed PHP response over HTTPS
         run: |
           curl --fail --silent --show-error --max-time 30 https://yui.eng.pro/android/wakAnd/ > /tmp/wakand-auth-response.json
