@@ -172,6 +172,9 @@ disconnectは行ロック下でdisconnect_requested=1をcommitしてから202を
 リクエスト全体の時間予算を守れないときは実行せず、次回へ持ち越す。
 無アクセス時の物理削除や上流失効完了日時は保証しない。pending件数/最古日時のみ秘密なしで管理者へ確認可能にする。
 CLIメンテナンスを別途実装すれば手動実行できる。cronの利用可否はOAuth開始の必須条件にしない。
+MySQLイベントは任意の補助とする。event_scheduler=ONとEVENT権限を確認してから別SQLで導入する。
+ルーチンを作るだけでは定期実行にならない。初期対象は期限切れrate bucketの削除に限定し、
+外部HTTPS失効・token復号はPHPへ残す。確認SQLと制約は `database-setup.md` に記載。
 公開startはIP由来HMACごとに10件/10分、全体100件/10分を初期値とする。
 認証失敗30件/分/IP、refresh 6件/分/link、complete 60件/分/linkを上限の初期値とし429で制限。
 IPはREMOTE_ADDRを用い、信頼設定のないX-Forwarded-Forを採用しない。生IPはDBに保存しない。

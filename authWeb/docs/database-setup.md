@@ -66,3 +66,27 @@ versionは未登録のままにして、失敗文と作成済み構造を確認�
 002以降の追加SQLと事前条件・バックアップ・検証・復旧手順を変更ごとに用意する。
 本番で実行するのは管理者。CIは独立したMySQLでDDLを検証するのみ。
 今回、テーブル作成・DB接続・パスワード配置の本番実施はまだ確認していない。
+
+## 任意: MySQLイベントでの定期掃除
+
+ルーチンは処理の定義、イベントは時刻に応じてSQLを実行する機能。
+phpMyAdminにメニューがあるだけでは、イベントが実行可能とは限らない。
+まず次の読み取りだけを行う。出力全文の共有は不要で、ON/OFF/DISABLEDとEVENT権限の有無を確認する。
+
+```sql
+SHOW VARIABLES LIKE 'event_scheduler';
+SHOW GRANTS FOR CURRENT_USER;
+```
+
+ONかつ対象DBにEVENT権限（またはそれを含む権限）があれば採用候補。
+OFF/DISABLEDや権限不足なら提供元の制限を確認する。共有DBサーバーのglobal設定を勝手に変更しない。
+CREATE ROUTINE権限はEVENT権限の代わりにならない。
+
+採用時も別の更改SQLで導入し、重複実行制御・件数制限・実際の最終実行結果を確認する。
+安全な初期対象は期限切れrate bucketの削除。session/linkの掃除は状態遷移の実装と合わせて追加し、
+未受領tokenや失効待ち・結果不明のtokenを単純な日付条件で削除しない。
+WakaTimeへのHTTPS失効とtoken復号はPHPの責務。DBイベントで外部通信を実装しない。
+イベント不可でも、利用時の期限検証とPHPの件数制限付き掃除で認証は成立する。
+
+出典: [MySQLイベント](https://dev.mysql.com/doc/refman/8.0/en/events-overview.html)、
+[スケジューラ設定](https://dev.mysql.com/doc/refman/8.0/en/events-configuration.html)。
