@@ -88,4 +88,16 @@ public class OAuthManagerTest {
         try { manager.accessToken("https://wakapi.example/api/v1", false, 0); fail(); }
         catch (OAuthManager.Failure expected) { assertEquals("invalid_destination", expected.code); }
     }
+    @Test public void lostReceiptCanRecoverAfterSessionExpiryWithoutReauthorization() throws Exception {
+        MemoryStore store = new MemoryStore();
+        OAuthManager manager = new OAuthManager(store, (path, body, credentials) -> {
+            if (path.equals("v1/link/complete")) throw new OAuthManager.Failure("link_expired");
+            try {
+                if (path.equals("v1/link/start")) return start(ID);
+                assertEquals("v1/token/refresh", path); assertEquals(0, body.getLong("observed_generation"));
+                return token(1);
+            } catch (Exception error) { throw new AssertionError(error); }
+        });
+        manager.begin(); manager.complete(); assertEquals("active", manager.status()); assertEquals(1, manager.generation());
+    }
 }

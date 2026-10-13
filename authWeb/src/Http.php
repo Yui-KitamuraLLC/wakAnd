@@ -80,10 +80,15 @@ function handleHttp(): void
             $result=$service->start(decodeId($body['device_secret_hash'],32),decodeId($body['verifier_challenge'],32),$ip);
             http_response_code(201);
         } else {
-            $id=decodeId($_SERVER['HTTP_X_WAKAND_LINK_ID'] ?? null,16);
-            $auth=$_SERVER['HTTP_AUTHORIZATION'] ?? '';
-            if (!str_starts_with($auth,'Bearer ')) { throw new ApiError(401,'device_unauthorized'); }
-            try { $secret=decodeId(substr($auth,7),32); } catch (ApiError $e) { throw new ApiError(401,'device_unauthorized'); }
+            try {
+                $id=decodeId($_SERVER['HTTP_X_WAKAND_LINK_ID'] ?? null,16);
+                $auth=$_SERVER['HTTP_AUTHORIZATION'] ?? '';
+                if (!str_starts_with($auth,'Bearer ')) { throw new ApiError(401,'device_unauthorized'); }
+                $secret=decodeId(substr($auth,7),32);
+            } catch (ApiError $e) {
+                $service->authenticationFailure($ip);
+                throw new ApiError(401,'device_unauthorized');
+            }
             $service->authenticate($id,$secret,$ip);
             if ($path === '/android/wakAnd/v1/link/complete') {
                 $body=parseBody($raw,['verifier']); $result=$service->complete($id,$secret,decodeId($body['verifier'],32));

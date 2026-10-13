@@ -70,10 +70,12 @@ final class OAuthService
                 && ($row['disconnected_at'] === null || (int)$row['disconnected_at']+604800 > $this->repo->now());
         });
         if (!$valid) {
-            $this->repo->transaction(fn() => $this->repo->rate('auth-failure',$ip,60,30,$this->config['rate_limit_key']));
+            $this->authenticationFailure($ip);
             throw new ApiError(401,'device_unauthorized');
         }
     }
+    public function authenticationFailure(string $ip): void
+    { $this->repo->transaction(fn() => $this->repo->rate('auth-failure',$ip,60,30,$this->config['rate_limit_key'])); }
     private function authenticatedRow(string $id, string $secret): array
     {
         $row=$this->recover($this->repo->link($id));
@@ -253,6 +255,7 @@ final class OAuthService
     }
     public function cleanup(bool $network = true): void
     {
+        $started=microtime(true);
         $now=$this->repo->now();
         $ids=$this->repo->query("SELECT l.link_id FROM oauth_links l LEFT JOIN oauth_link_sessions s ON s.link_id=l.link_id WHERE
             (l.operation_deadline IS NOT NULL AND l.operation_deadline<=?) OR
@@ -260,6 +263,7 @@ final class OAuthService
             (l.disconnected_at IS NOT NULL AND l.disconnected_at<=? AND l.device_secret_hash IS NOT NULL)
             ORDER BY l.updated_at LIMIT 20",[$now,$now,$now-604800])->fetchAll();
         foreach ($ids as $entry) {
+            if (microtime(true)-$started > 3) { break; }
             $this->repo->transaction(function () use ($entry,$now) {
                 $row=$this->recover($this->repo->link($entry['link_id']));
                 if (in_array($row['status'],['pending','ready'],true)) {
@@ -275,7 +279,7 @@ final class OAuthService
             });
         }
         $this->repo->query('DELETE FROM oauth_rate_buckets WHERE expires_at<=? LIMIT 20',[$now]);
-        if ($network) {
+        if ($network && microtime(true)-$started < 5) {
             $id=$this->repo->query("SELECT link_id FROM oauth_links WHERE status='revoke_pending' AND token_bundle IS NOT NULL AND next_revoke_at<=? ORDER BY next_revoke_at LIMIT 1",[$now])->fetchColumn();
             if (is_string($id)) { $this->revoke($id); }
         }

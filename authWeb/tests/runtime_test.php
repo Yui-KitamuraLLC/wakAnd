@@ -96,6 +96,10 @@ check($provider->refreshes===1 && $second['generation']===2,'single refresh acro
 check($other->refresh($id,$secret,1,'unauthorized')===$second && $provider->refreshes===1,'stale generation fetch without refresh');
 rejected(fn()=>$service->refresh($id,$secret,3,'unauthorized'),'invalid_request');
 
+$repo->query('UPDATE oauth_link_sessions SET expires_at=UNIX_TIMESTAMP()-1 WHERE link_id=?',[$id]);
+rejected(fn()=>$service->complete($id,$secret,$verifier),'link_expired');
+check($service->refresh($id,$secret,0,'expired')===$second && $provider->refreshes===1,'active receipt recovered after session expiry with no new refresh');
+
 [$id,$secret]=active();
 $provider->duringRefresh=function () use ($other,$id,$secret) { $other->disconnect($id,$secret); };
 rejected(fn()=>$service->refresh($id,$secret,1,'unauthorized'),'link_disconnected');
@@ -123,6 +127,21 @@ $stored=$repo->query('SELECT * FROM oauth_links WHERE link_id=?',[$id])->fetch()
 check($stored['status']==='revoke_pending' && $stored['token_bundle']!==null && (int)$stored['generation']===2,'late success recovered after old revocation');
 $provider->duringRefresh=null; $service->revoke($id);
 check($provider->revokes===2,'both old and delayed tokens revoked');
+
+// Fault injection: a lost update result arrives while the old generation is being revoked.
+[$id,$secret]=active(); $operationId=random_bytes(16);
+$operation=$repo->query('SELECT * FROM oauth_links WHERE link_id=?',[$id])->fetch();
+$operation['operation_id']=$operationId; $operation['status']='refreshing';
+$repo->query("UPDATE oauth_links SET status='reauth_required',unresolved_operation_id=?,revocation_uncertain=1 WHERE link_id=?",[$operationId,$id]);
+$provider->duringRevoke=function () use ($other,$operation,$provider) {
+    $resume=new ReflectionMethod(OAuthService::class,'execute');
+    $resume->invoke($other,$operation,fn()=>$provider->bundle());
+};
+$result=$service->disconnect($id,$secret);
+$stored=$repo->query('SELECT * FROM oauth_links WHERE link_id=?',[$id])->fetch();
+check($result['revocation_pending'] && $stored['token_bundle']!==null && (int)$stored['generation']===2,'old revoke cannot erase a recovered new generation');
+$provider->duringRevoke=null; $service->revoke($id);
+check($provider->revokes===2 && $repo->query('SELECT token_bundle FROM oauth_links WHERE link_id=?',[$id])->fetchColumn()===null,'recovered generation also revoked');
 
 [$id,$secret,$verifier,$state,$cookies]=fresh(); $service->callback($state,'fake-code',null,$cookies);
 $repo->query('UPDATE oauth_link_sessions SET expires_at=UNIX_TIMESTAMP()-1 WHERE link_id=?',[$id]);

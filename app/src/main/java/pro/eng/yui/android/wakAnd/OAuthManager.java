@@ -142,7 +142,14 @@ public final class OAuthManager {
                 JSONObject pending = doc.optJSONObject("pending");
                 if (pending == null || !pending.has("link_id")) return;
                 String before = doc.toString();
-                JSONObject result = post("v1/link/complete", new JSONObject().put("verifier", pending.getString("verifier")), pending);
+                JSONObject result;
+                try { result = post("v1/link/complete", new JSONObject().put("verifier", pending.getString("verifier")), pending); }
+                catch (Failure error) {
+                    if (!"link_expired".equals(error.code)) throw error;
+                    // A lost response may already have activated the link. The expired session
+                    // cannot be reused; device credentials can recover the active generation.
+                    result = post("v1/token/refresh", new JSONObject().put("observed_generation", 0).put("reason", "expired"), pending);
+                }
                 if (result.optBoolean("pending")) throw new Failure("authorization_pending");
                 JSONObject active = credentials(pending); acceptToken(active, result);
                 JSONObject previous = doc.optJSONObject("active"); if (previous != null) queue(doc, previous);

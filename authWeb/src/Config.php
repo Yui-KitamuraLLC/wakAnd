@@ -54,7 +54,7 @@ function runtimeConfig(array $config): array
     $db = $config['database'] ?? [];
     foreach (['host', 'name', 'user', 'password', 'tls_mode'] as $field) {
         if (!isset($db[$field]) || !is_string($db[$field]) || $db[$field] === ''
-            || str_starts_with($db[$field], 'REPLACE_') || preg_match('/[\x00-\x1f;]/', $db[$field])) {
+            || str_starts_with($db[$field], 'REPLACE_') || str_contains($db[$field], "\0")) {
             throw new \RuntimeException($failure);
         }
     }
