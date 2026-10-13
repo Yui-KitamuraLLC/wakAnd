@@ -2,7 +2,8 @@
 
 2026-10-13。#2 / #10 / #11 / #12 → #3 / #4 / #5 / #6 / #13。
 これは設計。管理者申告で本番初期4テーブルとversion/checksum登録は済み。
-PHPからの読取照合・DB接続/TLS・暗号鍵配置・OAuth実疎通は未確認。
+2026-10-14にPHPからのDB/schema読取照合・暗号鍵配置を確認。provider_internalでTLS暗号化なし。
+OAuth実疎通は未確認。暗号実装は同梱sodium_compat対応を追加し、本番適用前のレビュー待ち。
 実装と管理者向け後続手順は [#3実装](implementation-3.md) を参照。
 本番設定のPHP読み取りと既存CIのFTP配置は確認済み。
 
@@ -55,7 +56,7 @@ PDO MySQL、utf8mb4、例外モード、ネイティブprepare、非永続接続
 FAQは契約サービス外からの接続禁止を明記するが、暗号化やプライベートIPまでは保証しない。
 サーバー内PHPから疎通し `Ssl_cipher` と証明書検証可否を確認。TLS対応時は証明書・ホスト名を検証して必須化。
 非対応の場合、運用が提供元の内部接続に依存することを管理者へ報告して `provider_internal` を明示採用する。
-接続失敗時にTLS検証を自動解除しない。現在は接続もTLSも未確認。
+接続失敗時にTLS検証を自動解除しない。実測ではprovider_internalで接続成功、TLS暗号化なし。
 
 ## 3. データモデル
 
@@ -76,7 +77,9 @@ verifierは32バイト乱数のbase64url（43文字）、challengeはそのASCII
 ハッシュ比較は定数時間比較。UUID・時刻・端末情報で秘密値を代用しない。
 
 token_bundleはJSON（access_token、refresh_token、token_type、実付与scope、expires_at）を
-XChaCha20-Poly1305で暗号化したBLOB。BLOBの先頭24バイトをnonce、残りを暗号文＋認証タグとする。
+XChaCha20-Poly1305で暗号化したBLOB。ネイティブsodiumを優先し、未提供時は
+アプリ内の固定sodium_compatを使う。両方式で既知ベクトルを検証し、暗号文形式・鍵・AADは共通。
+依存元・64bit条件・速度/監査の制約は [配置手順](sodium-compat-deployment.md) に記載。BLOBの先頭24バイトをnonce、残りを暗号文＋認証タグとする。
 暗号化ごとに新しいnonceを生成し、AADは `wakand|production|<link_id>|<generation>|<key_id>`。
 AADとDB行の対応を検証して、他行・他環境からの差し替えを拒否する。鍵はDBに保存しない。
 access_expires_at・granted_scopeを索引用/判定用に平文でも持つが、復号内容との一致を検証する。
@@ -226,7 +229,7 @@ reauth_requiredへ移して、旧tokenを自動更新せず再認可を求める
 
 ## 9. 実装者への着手順と検証
 
-1. PHPのpdo_mysql/cURL/sodium、DBから見たバージョン/InnoDB/TLS/権限を秘密なしで確認。
+1. PHPのpdo_mysql/cURL、暗号backend/available/self_test、DBから見たバージョン/InnoDB/TLS/権限を秘密なしで確認。
 2. 管理者用設定ひな形・サーバー内の鍵生成手順を用意。DBの接続だけを確認し、DDLは手順に沿って適用。
 3. CIに独立MySQLを起動し、DDLとRepositoryの状態遷移・暗号化を検証。
 4. #3: start/launch/callback/complete、refresh/disconnect、Android Keystore・App Links。

@@ -21,17 +21,19 @@ AndroidはKeystore + noBackupFilesDir + AtomicFileで端末資格情報/access t
 ## 本番準備の現在地
 
 管理者申告: 初期4テーブル作成済み、version=1とチェックサム登録済み。
-サーバーからの読み取り照合はまだ行っていない。既存DDLの再インポート・DROPは不要。
+既存DDLの再インポート・DROPは不要。以下のサーバー内読み取り照合を実施済み。
 2026-10-14 JST実測: 非公開設定・サーバー生成鍵の参照はconfiguration=true。
 PHPからのDB接続とschema照合は成功し、version/checksum・4 InnoDBテーブル・外部キーを確認。
 処理中・期限超過・失効保留件数はいずれも0。初期DDLの再実行・更改は行っていない。
 MySQL greetingのTLS対応通知はfalse。管理者の明示選択によりprovider_internalを使用し、
 実接続のtls_encrypted=falseを確認。TLS成功とは扱わない。maintenance=trueを維持している。
 pdo_mysql/curlはtrue、sodiumはfalse、extension_dir内のsodium.soも読取不可。
-暗号方式を変更したり、必須拡張の検証を迂回したりせず、PHP環境の対応確認を待つ。
+通常OAuthは未稼働。ネイティブ拡張の追加に代えて、アプリ内の同梱暗号実装で対応する。
 CGIPassAuth Onの配置後、期限付き管理APIの認証とサーバー内鍵生成は成功。
 PHP 8.3.32 CGIへ変更後もsodium=false、sodium.soは読取不可だった。
-AES-GCMへの[変更検討案](aes-gcm-proposal.md)を用意したが、現行暗号方式を変更していない。
+sodium_compat v2.5.2を固定・同梱し、XChaCha20と既存鍵・DB形式を保持する実装を追加した。
+[同梱版の配置手順](sodium-compat-deployment.md)に従い、本番適用前にPR #14をレビューする。
+AES-GCM移行案は採用しない。同梱版の本番動作・性能は未測定。
 RewriteBaseの明示配置後、callbackは503、入力不足のapp/completeは400になり、本番の404は解消。
 公開ルート200・内部ライブラリ403は維持している。503はmaintenance/必須拡張未充足の状態であり、認可成功ではない。
 開発用OAuthアプリ/DB/URLは未払い出し。自動試験はモック提供元と独立MySQL 8.0のみ。
@@ -62,7 +64,7 @@ checksumは同じ001ファイルのLF/CRLFの2表現を許可する。SQLの内�
 
 検収とPR merge前にmaintenance=trueを維持する。wk3impl push/PRでは本番転送しない。
 wk1oauth/mainへmergeすると既存CIでFTP配置されるため、管理者設定の準備を先に済ませる。
-公開物はindex.php/config-check.php/admin.php/.htaccessと秘密を含まない固定リストのPHPライブラリのみ。
+公開物はindex.php/config-check.php/admin.php/.htaccess、固定PHP、schema照合値とチェックサム検証済みの同梱ライブラリ。61ファイル。
 admin.phpは非公開の期限付き認証ファイルがない/期限切れなら404。
 Apacheは本ディレクトリ内のRewriteEngine・AllowOverrideを許可する必要がある。
 CIでApacheの経路とライブラリ直接アクセス拒否を検証するが、実サーバーでの確認は別途必要。
@@ -70,7 +72,7 @@ CIでApacheの経路とライブラリ直接アクセス拒否を検証するが
 - ルートの`oauth_ready:false`は互換維持した配置プローブ。稼働可否の判定には使わない。
 - config-check.phpも従来OAuth登録値の読取だけ。本番DBやtoken交換の成功を意味しない。
 - 新OAuth経路はmaintenance未設定/true、DB・鍵・checksum不整合で503になる。
-- 全ファイル配置と診断が成功した後、管理者がmaintenance=falseへ切り替える。
+- 全ファイル配置と診断が成功した後、稼働開始の承認を受けて管理者がmaintenance=falseへ切り替える。
 - callbackアクセスログのquery（code/state）を記録しない設定・保持権限はサイト管理者が確認する。
   PHP自身は上流本文・SQL引数・Authorization・Cookie・URL全文をログへ出さない。
 - 実際の外部ブラウザ→認可→Android復帰→受取→更新→失効は#13/#6で識別したテストアカウントを使う。
@@ -85,8 +87,9 @@ cron・MySQLイベントは必須にしない。無アクセス時の上流失�
 
 ## 検証と検収の境界
 
-- Python: 転送許可リスト・パス逸脱・秘密/schema除外。
+- Python: 転送許可リスト・依存49ファイルのSHA-256一致・パス逸脱・秘密/schema除外。
 - PHP: 構文、秘密設定の出力抑制、maintenance・鍵・TLSモード検証。
+  ネイティブ/同梱版の既知ベクトル・暗号文互換・改ざん拒否・欠落時503を独立に検証。
   管理用認証の期限・同一origin・Authorization、無効時404、秘密非出力、鍵の非公開保存・上書き拒否も検証。
 - MySQL 8.0: DDLとschema gate、Cookie/state/verifier境界、暗号文/AAD差し替え、
   独立接続でのcallback/refresh競合、応答喪失後再取得、解除競合、結果不明後再送禁止、
@@ -94,7 +97,8 @@ cron・MySQLイベントは必須にしない。無アクセス時の上流失�
 - Apache: 経路rewrite・ライブラリ直接アクセス拒否・DDL非公開。
 - Android: ビルド・JUnitの送信先/復帰URL検証、応答喪失とセッション失効後の受取回復、
   通信中のローカル解除と遅延応答による復活防止、再連携とオフライン失効キュー保持。
-- 未実施: 本番PHP拡張/DB/TLS/権限、実WakaTime応答、実機App Links/Keystore/移行/通信断。
+- 未実施: 本番同梱暗号の動作・性能、実WakaTime応答、実機App Links/Keystore/移行/通信断。
+  本番DB/schema接続・鍵配置は確認済み。sodium拡張は未提供、DB通信はTLSなし。
   CIのモック試験をこれらの実測成功として報告しない。
 
 根拠: [WakaTime公式OAuth仕様](https://wakatime.com/developers#authentication)（2026-10-13確認）。

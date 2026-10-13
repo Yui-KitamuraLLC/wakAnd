@@ -81,13 +81,16 @@ PHPが非公開フォルダへ書けない場合はprivate_storage_unavailable�
    この測定はユーザー名・DBパスワードやクライアントパケットを送らず接続を閉じる。
    trueは証明書検証や暗号化接続成功を意味しない。実接続のtls_encryptedと分けて扱う。
    sodium_module_availableはPHPのextension_dirに読取可能なsodium.soがあるかだけを返す。
-   falseならphp.iniへextension=sodium.soを追加するだけでは解決しないため、提供元へ確認する。
-   DB/schemaの読取診断はpdo_mysqlだけで行う。curl/sodiumがfalseなら通常OAuthは503を維持し、稼働を開始しない。
+   falseならphp.iniへextension=sodium.soを追加するだけでは解決しない。
+   同梱版の [配置手順](sodium-compat-deployment.md) でwakAnd内だけの暗号実装を用意できる。
+   DB/schemaの読取診断はpdo_mysqlだけで行う。curl=false、またはcrypto.available/self_testがfalseなら通常OAuthは503を維持する。
+   crypto.backendはnativeまたはsodium_compat。同梱版で成功ならextensions.sodium=falseでも利用可能。
+   self_test_msは公開ベクトル検証の時間で、本番token処理全体の時間ではない。
 2. configuration/database/schemaのtrueを確認する。
    requiredではtls_encrypted=trueも必要。provider_internalの暗号化有無は実測結果として記録する。
    schema不一致はphpMyAdminで既存構造・適用ファイル・登録済みchecksumを照合する。
    エラーを消すために再作成・DROP・無条件のバージョン登録はしない。
-3. 配置・Apache経路・診断が確認できたら、管理者がFFFTPでmaintenance=falseへ変更する。
+3. 配置・Apache経路・診断が確認できたら、稼働開始の承認後に管理者がFFFTPでmaintenance=falseへ変更する。
 4. 管理画面を再利用しない場合、FFFTPでサーバーの非公開admin-access.phpを削除する。
    admin.phpが404へ戻ることを確認する。期限切れでも自動無効になる。
    ローカルのaccess-key.txt/期限切れ認証ファイルは不要になり次第管理者が削除する。

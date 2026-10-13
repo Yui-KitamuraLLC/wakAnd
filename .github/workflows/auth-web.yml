@@ -79,6 +79,7 @@ jobs:
           php authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-native.json
           docker run --rm -v "$PWD:$PWD" -w "$PWD" -e WAKAND_TEST_CRYPTO=sodium_compat wakand-crypto-test php -n authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-polyfill.json
           docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/crypto_missing_test.php
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/crypto_missing_test.php --partial
           docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/admin_test.php
       - name: Check PHP HTTP response
         shell: bash

@@ -17,7 +17,8 @@ function tokenCryptoStatus(): array
             if (PHP_VERSION_ID<80100 || PHP_INT_SIZE!==8) { return $status; }
             $autoload=__DIR__ . '/_vendor/sodium_compat/autoload.php';
             if (!is_readable($autoload)) { return $status; }
-            require_once $autoload;
+            // An incomplete upload must not emit require warnings containing filesystem paths.
+            @require_once $autoload;
             // Keep upstream's safe multiplication default. No speed/security tradeoff switch.
             if (\ParagonIE_Sodium_Compat::$fastMult !== false) { return $status; }
             $status['backend']='sodium_compat';
