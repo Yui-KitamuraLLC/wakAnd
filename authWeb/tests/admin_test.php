@@ -30,6 +30,11 @@ rejects(fn()=>authorizeAdmin($access,array_diff_key($server,['HTTP_AUTHORIZATION
 ob_start();
 $flags=inspectRuntime(static function (): array { throw new RuntimeException('FAKE_SECRET_NEVER_RETURN'); },[]);
 $output=ob_get_clean(); verify($output==='' && !str_contains(json_encode($flags),'FAKE_SECRET'));
+$greeting="\x0a8.0-test\0" . pack('V',1) . 'abcdefgh' . "\0";
+verify(\WakAnd\Auth\mysqlTlsFromGreeting($greeting.pack('v',2048))===true);
+verify(\WakAnd\Auth\mysqlTlsFromGreeting($greeting.pack('v',512))===false);
+rejects(fn()=>\WakAnd\Auth\mysqlTlsFromGreeting("\xff"),'service_unavailable');
+rejects(fn()=>\WakAnd\Auth\mysqlTlsFromGreeting("\x0a8.0\0"),'service_unavailable');
 
 $root=sys_get_temp_dir().'/wakand-admin-test-'.bin2hex(random_bytes(8)); mkdir($root,0700); mkdir($root.'/www');
 $target=$root.'/generated-keys.php';

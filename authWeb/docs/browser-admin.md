@@ -74,6 +74,10 @@ PHPが非公開フォルダへ書けない場合はprivate_storage_unavailable�
    extensionsはpdo_mysql/curl/sodium個別の真偽、configuration/database/schema/tls_encrypted、
    tls_mode/maintenance、処理中/期限超過の操作数、失効保留件数を返す。
    DBホスト・ユーザー・パスワード・鍵・token・例外本文は返さない。診断はDDL/DML/上流OAuthを実行しない。
+   database_tls_advertisedは、サーバーの初期MySQL greetingがTLS対応を通知するかの真偽（取得不可はnull）。
+   設定・鍵が未完成でも、指定済みDBホストへのサーバー内接続で確認できる。
+   この測定はユーザー名・DBパスワードやクライアントパケットを送らず接続を閉じる。
+   trueは証明書検証や暗号化接続成功を意味しない。実接続のtls_encryptedと分けて扱う。
 2. configuration/database/schemaのtrueを確認する。
    requiredではtls_encrypted=trueも必要。provider_internalの暗号化有無は実測結果として記録する。
    schema不一致はphpMyAdminで既存構造・適用ファイル・登録済みchecksumを照合する。
@@ -97,3 +101,6 @@ maintenance設定は変更しない。token交換・更新・任意SQL・コマ�
 MySQLイベントは任意の補助であり、外部HTTPS失効やtoken復号の代わりにはならない。
 
 CLI用スクリプトはCLIが別途利用可能な環境の補助手段として残す。標準手順の必須条件にしない。
+
+MySQL greetingの根拠: [Protocol::HandshakeV10](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_v10.html)、
+[CLIENT_SSL capability](https://dev.mysql.com/doc/dev/mysql-server/latest/group__group__cs__capabilities__flags.html)。

@@ -52,14 +52,52 @@ function createPrivateKeys(string $path, string $webRoot, array $config): void
         }
     } finally { if (is_resource($file)) { fclose($file); } umask($mask); }
 }
+function mysqlTlsFromGreeting(string $payload): bool
+{
+    if ($payload === '' || ord($payload[0]) !== 10) { throw new ApiError(503,'service_unavailable'); }
+    $versionEnd=strpos($payload,"\0",1);
+    if ($versionEnd === false || $versionEnd > 128 || strlen($payload)<$versionEnd+16) {
+        throw new ApiError(503,'service_unavailable');
+    }
+    // Protocol::HandshakeV10: version NUL, thread(4), scramble(8), filler(1), capability_flags_1(2).
+    $flags=unpack('vflags',substr($payload,$versionEnd+14,2));
+    return ($flags['flags'] & 2048) !== 0; // CLIENT_SSL. This is capability, not verified encryption.
+}
+function probeDatabaseTls(): ?bool
+{
+    $socket=false;
+    try {
+        $deadline=microtime(true)+5;
+        $socket=@stream_socket_client('tcp://mysql50009.db.sakura.ne.jp:3306',$errorCode,$errorMessage,3);
+        if ($socket === false) { return null; }
+        stream_set_timeout($socket,2);
+        $read=static function (int $length) use ($socket,$deadline): string {
+            $bytes='';
+            while (strlen($bytes)<$length && microtime(true)<$deadline) {
+                $chunk=@fread($socket,$length-strlen($bytes));
+                if ($chunk === false || $chunk === '') { break; }
+                $bytes.=$chunk;
+            }
+            if (strlen($bytes)!==$length) { throw new ApiError(503,'service_unavailable'); }
+            return $bytes;
+        };
+        $header=$read(4);
+        $length=ord($header[0]) | (ord($header[1])<<8) | (ord($header[2])<<16);
+        if ($length<16 || $length>8192 || ord($header[3])!==0) { return null; }
+        // Read the server greeting, then close. Never send username/password or any client packet.
+        return mysqlTlsFromGreeting($read($length));
+    } catch (\Throwable $e) { return null; }
+    finally { if (is_resource($socket)) { fclose($socket); } }
+}
 /** Read-only flags; diagnostics never perform OAuth requests, DDL or cleanup. */
 function inspectRuntime(callable $load, array $checksums): array
 {
     $result=['extensions'=>['pdo_mysql'=>extension_loaded('pdo_mysql'),'curl'=>extension_loaded('curl'),'sodium'=>extension_loaded('sodium')],
         'configuration'=>false,'database'=>false,'schema'=>false,'tls_encrypted'=>false,'tls_mode'=>null,'maintenance'=>true,
-        'operations_in_progress'=>null,'operations_expired'=>null,'revocation_pending'=>null];
+        'operations_in_progress'=>null,'operations_expired'=>null,'revocation_pending'=>null,'database_tls_advertised'=>null];
     try {
         $config=$load(); $result['maintenance']=($config['maintenance'] ?? true) !== false;
+        if (($config['database']['host'] ?? '')==='mysql50009.db.sakura.ne.jp') { $result['database_tls_advertised']=probeDatabaseTls(); }
         $config['maintenance']=false; // This does not edit settings or enable ordinary endpoints.
         $config=runtimeConfig($config); $result['configuration']=true; $result['tls_mode']=$config['database']['tls_mode'];
         if (in_array(false,$result['extensions'],true)) { return $result; }
