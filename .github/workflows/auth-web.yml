@@ -1,0 +1,175 @@
+name: Auth Web
+
+on:
+  pull_request:
+    paths: ['authWeb/**', '.github/workflows/auth-web.yml']
+  push:
+    branches: [main, wk1oauth, wk3impl]
+    paths: ['authWeb/**', '.github/workflows/auth-web.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-schema:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        crypto: [native, sodium_compat]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: disposable-ci-password
+          MYSQL_DATABASE: wakand_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pdisposable-ci-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Import design DDL into disposable MySQL 8.0
+        env:
+          MYSQL_CONTAINER: ${{ job.services.mysql.id }}
+        shell: bash
+        run: |
+          mysql_test() {
+            docker exec -i -e MYSQL_PWD=disposable-ci-password "$MYSQL_CONTAINER" mysql -uroot --batch --skip-column-names wakand_test "$@"
+          }
+          mysql_test < authWeb/schema/001_oauth_mysql.sql
+          test "$(mysql_test -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='wakand_test' AND ENGINE='InnoDB';")" = 4
+          test "$(mysql_test -e "SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='wakand_test' AND TABLE_NAME='oauth_link_sessions' AND REFERENCED_TABLE_NAME='oauth_links';")" = 1
+          test "$(mysql_test -e "SELECT COUNT(*) FROM oauth_schema_versions;")" = 0
+          echo 'MySQL 8.0: four InnoDB tables and session foreign key verified; no production connection.'
+      - name: Validate OAuth lifecycle with independent MySQL connections
+        env:
+          WAKAND_TEST_CRYPTO: ${{ matrix.crypto }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php8.3-cli php8.3-mysql php8.3-curl
+          if [ "$WAKAND_TEST_CRYPTO" = sodium_compat ]; then
+            docker build -f authWeb/tests/Dockerfile.crypto -t wakand-crypto-test .
+            docker run --rm --network host -v "$PWD:$PWD" -w "$PWD" -e WAKAND_TEST_CRYPTO wakand-crypto-test php -n -d extension=pdo_mysql.so authWeb/tests/runtime_test.php
+          else
+            php authWeb/tests/runtime_test.php
+          fi
+
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install PHP CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php8.3-cli php8.3-curl
+          docker build -f authWeb/tests/Dockerfile.crypto -t wakand-crypto-test .
+      - name: Validate PHP and deployment boundaries
+        run: |
+          find authWeb -name '*.php' -print0 | xargs -0 -r -n1 php -l
+          python3 -m unittest discover -s authWeb/tests -v
+          php authWeb/tests/config_test.php
+          php authWeb/tests/admin_test.php
+          php authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-native.json
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" -e WAKAND_TEST_CRYPTO=sodium_compat wakand-crypto-test php -n authWeb/tests/crypto_test.php | tee /tmp/wakand-crypto-polyfill.json
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/crypto_missing_test.php
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/crypto_missing_test.php --partial
+          docker run --rm -v "$PWD:$PWD" -w "$PWD" wakand-crypto-test php -n authWeb/tests/admin_test.php
+      - name: Check PHP HTTP response
+        shell: bash
+        run: |
+          mkdir -p /tmp/wakand-auth-site/android/wakAnd
+          FTP_SERVER=yui.eng.pro FTP_SERVER_DIR=/android/wakAnd/ python3 authWeb/scripts/deploy.py
+          cp -a authWeb/dist/. /tmp/wakand-auth-site/android/wakAnd/
+          docker run --rm -v /tmp/wakand-auth-site:/site:ro wakand-crypto-test php -n -r 'require "/site/android/wakAnd/_core.php"; $s=WakAnd\Auth\tokenCryptoStatus(); if (!$s["available"] || $s["backend"]!=="sodium_compat") { exit(1); }'
+          php -S 127.0.0.1:8080 -t /tmp/wakand-auth-site > /tmp/wakand-auth-php.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          curl --retry 5 --retry-connrefused --retry-delay 1 --fail --silent --show-error http://127.0.0.1:8080/android/wakAnd/ > /tmp/wakand-auth-response.json
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": True}'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST http://127.0.0.1:8080/android/wakAnd/)" = 405
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/oauth/callback)" = 400
+          test "$(curl --silent --output /tmp/wakand-config-check.json --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/config-check.php)" = 503
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-config-check.json").read_text()) == {"configured": False}'
+      - name: Verify Apache routing and library access boundary
+        run: |
+          sudo apt-get install -y apache2 libapache2-mod-php8.3
+          sudo a2enmod rewrite cgid
+          sudo cp -a /tmp/wakand-auth-site/android /var/www/html/
+          printf '<Directory /var/www/html/android/wakAnd>\nAllowOverride All\nRequire all granted\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-test.conf > /dev/null
+          sudo a2enconf wakand-test
+          sudo service apache2 restart
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_admin.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_crypto.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/autoload.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/LICENSE)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/src/Core/Curve25519/README.md)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/admin.php)" = 400
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/.htaccess)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/schema/001_oauth_mysql.sql)" = 404
+          # Exercise the CGI header boundary used by shared-host PHP (no real credential).
+          printf '#!/bin/sh\nprintf "Content-Type: text/plain\\r\\n\\r\\n%%s" "$HTTP_AUTHORIZATION"\n' | sudo tee /var/www/html/android/wakAnd/header-check.cgi > /dev/null
+          sudo chmod 755 /var/www/html/android/wakAnd/header-check.cgi
+          printf '<Directory /var/www/html/android/wakAnd>\nOptions +ExecCGI\nAddHandler cgi-script .cgi\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-cgi-test.conf > /dev/null
+          sudo a2enconf wakand-cgi-test
+          sudo service apache2 restart
+          test "$(curl --fail --silent --show-error -H 'Authorization: Bearer disposable-ci-header' http://127.0.0.1/android/wakAnd/header-check.cgi)" = 'Bearer disposable-ci-header'
+          test -z "$(curl --fail --silent --show-error http://127.0.0.1/android/wakAnd/header-check.cgi)"
+          # Also verify URL routing when the public folder is outside DocumentRoot.
+          sudo mkdir -p /var/www/wakand-alias-site/public
+          sudo cp -a authWeb/dist/. /var/www/wakand-alias-site/public/
+          printf 'Alias /android/wakAnd/ /var/www/wakand-alias-site/public/\n<Directory /var/www/wakand-alias-site/public>\nAllowOverride All\nRequire all granted\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-alias-test.conf > /dev/null
+          sudo a2enconf wakand-alias-test
+          sudo service apache2 restart
+          test "$(curl --silent --output /tmp/wakand-alias-callback.json --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-alias-callback.json").read_text())["error"] == "invalid_request"'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_vendor/sodium_compat/LICENSE)" = 403
+      - name: Save synthetic crypto verification and timings
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-crypto-verification
+          path: /tmp/wakand-crypto-*.json
+          if-no-files-found: error
+
+  deploy:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')
+    needs: [validate, validate-schema]
+    runs-on: ubuntu-24.04
+    environment:
+      name: auth-web-production
+      url: https://yui.eng.pro/android/wakAnd/
+    concurrency:
+      group: auth-web-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Prepare reviewed public files and validate destination
+        run: python3 authWeb/scripts/deploy.py
+        env:
+          FTP_SERVER: yui.eng.pro
+          FTP_SERVER_DIR: /android/wakAnd/
+      - name: Sync public files FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: yui.eng.pro
+          username: ${{ secrets.ftp_user }}
+          password: ${{ secrets.ftp_password }}
+          local-dir: ./authWeb/dist/
+          server-dir: /android/wakAnd/
+          state-name: .wakand-auth-sync-state.json
+          dangerous-clean-slate: false
+      - name: Verify deployed PHP response over HTTPS
+        run: |
+          curl --fail --silent --show-error --max-time 30 https://yui.eng.pro/android/wakAnd/ > /tmp/wakand-auth-response.json
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": True}'

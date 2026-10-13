@@ -18,6 +18,33 @@ GitHub 側の方針が変わった場合は、このファイルも更新して�
 
 ## WakaTime 認証
 
+### #8で決定したスプリント範囲（2026/10/13）
+
+- WakaTime公式は外部ブラウザのAuthorization Code＋PHPバックエンド方式で進める。
+- バックエンドは `authWeb/`、公開先は `https://yui.eng.pro/android/wakAnd/`。
+- 公式以外は従来のAPIキー方式・既存設定の互換維持を対象とする。
+  他サービスへのOAuth対応、自動判定、汎用OAuth基盤化はスプリント外。
+- PKCE非対応を実証したわけではない。追加調査を今回のバックエンド実装の着手条件にしない。
+- #8は方式・範囲の決定としてclose。登録設定は#9、設計は#12、実装は#3、
+  実疎通は#13/#6で引き続き管理する。
+
+### 実装上の条件
+
+- #12の設計成果物は `authWeb/docs/oauth-design.md`、初期DDLは
+  `authWeb/schema/001_oauth_mysql.sql`。設計完了と本番導入・実疎通を区別する。
+- DBは管理者が用意したMySQL 8.0を利用。契約レンタルサーバー内から接続する。
+  初期4テーブルとversion/checksum登録は管理者申告で済み。再作成・DROPは行わない。
+  #3実装・管理者確認は `authWeb/docs/implementation-3.md`。2026-10-14に非公開鍵生成・設定参照・PHPのDB/schema照合を確認。
+  管理者がprovider_internalを明示採用し、実接続はTLS暗号化なし。
+  PR #14をwk1oauthへmergeし、本番配布CI成功。PHP8.3.32ではsodium拡張は未提供だが、同梱sodium_compatでXChaCha20の自己検証が成功した。
+  配置手順は `authWeb/docs/sodium-compat-deployment.md`、2026-10-14 01:50頃JSTの本番診断は `authWeb/docs/production-diagnosis-20261014.md`。
+  その後管理者がmaintenance=falseへ切替。PR #15もwk1oauthへmerge・本番配布CI成功。
+  Pixel 6aで実認可・自動/手動記録・解除/再連携の成功報告あり。全E2E完了とは区別する。
+  最新の本番/実機記録は `authWeb/docs/production-rollout-20261014.md`。
+  正式版は操作者指定の1.5.0/code22。公開前の残検証は `release/verification-1.5.0.md`。
+  管理者の標準手順は `authWeb/docs/browser-admin.md`（FFFTP＋ブラウザ）。サーバーCLIを必須にしない。
+  本番DBへローカルPC・GitHub Actionsから接続しない。CIでは独立したテストDBを使う。
+
 - WakaTime は2026年11月1日から API キーを活動送信専用に変更する旨を通知している。
 - 読み取り API と external_durations は OAuth 対応を前提にする。
 - POST であることだけを根拠に、API キーで利用できると判断しない。

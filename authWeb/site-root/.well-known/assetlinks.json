@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "pro.eng.yui.android.wakAnd",
+      "sha256_cert_fingerprints": [
+        "FE:FD:B1:F7:B6:A8:8A:30:08:2C:7B:A2:70:DA:F3:AE:8B:7B:05:A6:78:84:38:3C:42:4D:D5:6A:F8:25:E0:9E"
+      ]
+    }
+  }
+]

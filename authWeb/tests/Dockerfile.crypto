@@ -1,0 +1,4 @@
+# CI only: shared sodium can genuinely be disabled with php -n.
+# This image and its build tools are never deployed to the shared host.
+FROM php:8.3-cli-bookworm
+RUN docker-php-ext-install pdo_mysql

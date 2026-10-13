@@ -22,6 +22,16 @@
 
         <!-- Project selector -->
         <TextView
+            android:id="@+id/txtProjectsStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite" />
+        <Button
+            android:id="@+id/btnRetryProjects"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/api_retry_projects" />
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/hint_project_name"

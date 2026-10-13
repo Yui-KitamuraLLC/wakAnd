@@ -6,15 +6,15 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
+        <exclude domain="file" path="official_oauth_v1" />
+        <exclude domain="sharedpref" path="official_oauth.xml" />
         <!-- TODO: Use <include> and <exclude> to control what is backed up.
         <include .../>
         <exclude .../>
         -->
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="file" path="official_oauth_v1" />
+        <exclude domain="sharedpref" path="official_oauth.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

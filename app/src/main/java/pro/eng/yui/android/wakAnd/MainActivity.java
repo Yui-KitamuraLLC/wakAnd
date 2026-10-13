@@ -46,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
     private String savedApiKey = "";
     private TextInputEditText editApiUrl;
     private Button btnEnableAccessibility;
+    private ConnectionSettings connections;
+    private TextView txtConnectionStatus;
+    private int userRequest;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -62,6 +65,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        connections = new ConnectionSettings(this);
+        txtConnectionStatus = findViewById(R.id.txtConnectionStatus);
+        findViewById(R.id.btnOAuth).setOnClickListener(v -> startActivity(new Intent(this, OAuthActivity.class)));
 
         txtUserName = findViewById(R.id.txtUserName);
         txtDashboardLink = findViewById(R.id.txtDashboardLink);
@@ -77,6 +83,13 @@ public class MainActivity extends AppCompatActivity {
         Button btnOfflineTime = findViewById(R.id.btnOfflineTime);
 
         loadSettings();
+        SwitchMaterial switchWakaTime = findViewById(R.id.switchWakaTime);
+        switchWakaTime.setChecked(connections.snapshot().official);
+        showDestination();
+        switchWakaTime.setOnCheckedChangeListener((button, official) -> {
+            connections.select(official); showDestination(); fetchAndDisplayUser();
+        });
+        findViewById(R.id.btnRetryUser).setOnClickListener(view -> fetchAndDisplayUser());
 
         editApiKey.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -94,8 +107,7 @@ public class MainActivity extends AppCompatActivity {
                     .setPositiveButton(R.string.yes, (dialog, which) -> {
                         editApiKey.setText("");
                         savedApiKey = "";
-                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
-                                .putString(KEY_API_KEY, "").apply();
+                        connections.saveCustom(String.valueOf(editApiUrl.getText()), "");
                         txtApiKeyWarning.setVisibility(android.view.View.GONE);
                         txtUserName.setText(R.string.user_not_linked);
                         txtDashboardLink.setVisibility(android.view.View.GONE);
@@ -157,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updateAccessibilityButtonText();
+        if (connections != null) fetchAndDisplayUser();
     }
 
     private void updateAccessibilityButtonText() {
@@ -196,12 +209,24 @@ public class MainActivity extends AppCompatActivity {
         editApiKey.setText(savedApiKey);
         txtApiKeyWarning.setVisibility(android.view.View.GONE);
         editApiUrl.setText(prefs.getString(KEY_API_URL, WakaTimeClient.getDefaultApiUrl()));
-        fetchAndDisplayUser();
     }
 
     private void fetchAndDisplayUser() {
+        int request = ++userRequest;
+        showDestination();
+        txtUserName.setText(R.string.api_user_unavailable);
+        txtUserName.setOnClickListener(null);
+        txtDashboardLink.setVisibility(View.GONE);
         WakaTimeClient client = new WakaTimeClient(this);
-        client.fetchCurrentUser((displayName, dashboardUrl, profileUrl) -> runOnUiThread(() -> {
+        client.fetchCurrentUser(result -> runOnUiThread(() -> {
+            client.shutdown();
+            if (request != userRequest || isFinishing() || isDestroyed()) return;
+            if (!result.successful()) {
+                txtUserName.setText(ApiMessages.error(result.error));
+                showDestination();
+                return;
+            }
+            String displayName = result.value.displayName, dashboardUrl = result.value.dashboardUrl, profileUrl = result.value.profileUrl;
             if (displayName != null && !displayName.isEmpty()) {
                 txtUserName.setText(displayName);
                 if (profileUrl != null) {
@@ -219,21 +244,44 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                 });
             } else {
-                txtUserName.setText(R.string.user_not_linked);
+                txtUserName.setText(R.string.api_user_unavailable);
                 txtUserName.setOnClickListener(null);
                 txtUserName.setClickable(false);
                 txtDashboardLink.setVisibility(android.view.View.GONE);
             }
-            client.shutdown();
         }));
     }
 
+    private void showDestination() {
+        boolean official = connections.snapshot().official;
+        int customVisibility = official ? View.GONE : View.VISIBLE;
+        findViewById(R.id.layoutApiKeyRow).setVisibility(customVisibility);
+        findViewById(R.id.layoutApiUrl).setVisibility(customVisibility);
+        findViewById(R.id.btnSave).setVisibility(customVisibility);
+        findViewById(R.id.txtApiKeyWarning).setVisibility(official ? View.GONE
+                : (!savedApiKey.equals(String.valueOf(editApiKey.getText())) ? View.VISIBLE : View.GONE));
+        findViewById(R.id.btnOAuth).setVisibility(official ? View.VISIBLE : View.GONE);
+        if (!official) { txtConnectionStatus.setText(R.string.custom_connection); return; }
+        OAuthManager manager = new OAuthManager(this);
+        String state = manager.status();
+        int message;
+        switch (state) {
+            case "active": message = R.string.oauth_active; break;
+            case "active_confirmation_required": message = R.string.oauth_active_confirmation; break;
+            case "pending": message = R.string.oauth_pending; break;
+            case "reauth_required": message = R.string.oauth_reauth; break;
+            case "disconnect_pending": message = R.string.oauth_disconnect_pending; break;
+            case "provider_confirmation_required": message = R.string.oauth_provider_confirmation; break;
+            default: message = manager.legacyHeartbeatAllowed() && !connections.snapshot().apiKey.isEmpty()
+                    ? R.string.oauth_legacy_migration : R.string.oauth_unlinked;
+        }
+        txtConnectionStatus.setText(message);
+    }
+
     private void saveSettings() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        prefs.edit()
-                .putString(KEY_API_KEY, String.valueOf(editApiKey.getText()))
-                .putString(KEY_API_URL, String.valueOf(editApiUrl.getText()))
-                .apply();
+        String url = ConnectionSettings.validateCustom(String.valueOf(editApiUrl.getText()).trim());
+        if (url == null) { editApiUrl.setError(getString(R.string.api_invalid_destination)); return; }
+        connections.saveCustom(url, String.valueOf(editApiKey.getText()));
         savedApiKey = String.valueOf(editApiKey.getText());
         txtApiKeyWarning.setVisibility(android.view.View.GONE);
         Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
