@@ -49,6 +49,11 @@ def stage(root, env):
         target = output / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(local, target)
+    # This library contains no credentials. The private config stays on the server.
+    library = root / 'src' / 'Config.php'
+    if library.is_symlink() or not library.is_file():
+        raise ValueError('Missing or invalid configuration library')
+    shutil.copyfile(library, output / '_config.php')
     return output
 
 

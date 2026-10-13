@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// Copy to ~/.php.config OUTSIDE ~/www/, then edit that private copy only.
-// If this file already exists, merge the wakand section into its returned array.
+// Copy to ~/.config/wakand/oauth.php OUTSIDE ~/www/, then edit that copy only.
 return [
     'wakand' => [
         'client_id' => 'pJDPWyzHvrc7iconHrnmrPaa',

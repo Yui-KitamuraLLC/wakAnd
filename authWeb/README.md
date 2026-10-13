@@ -30,9 +30,9 @@ authWeb/
 .github/workflows/auth-web.yml
 ```
 
-公開するのは許可リストにある `public/` 内のファイルのみ。
-内部実装・設定・暗号鍵・DBは `~/www/webroot/` の外に配置する方針。
-その実パスと転送方法はOAuth本体の実装時に確定する。このCIでは扱わない。
+公開するのは許可リストにある `public/` 内のファイルと、秘密値を持たない
+`src/Config.php` をコピーした `_config.php`。設定・暗号鍵・DBは `~/www/` の外に置く。
+秘密設定の転送は管理者が手動で行い、このCIでは扱わない。
 配置確認ページは `oauth_ready: false` を返す。認証の稼働確認ではない。
 
 ## 認証構成案
@@ -40,10 +40,10 @@ authWeb/
 ### 本番の秘密設定
 
 WakaTimeアプリは既存登録を流用し、client_idは `pJDPWyzHvrc7iconHrnmrPaa`。
-管理者が `config/php.config.example.php` をサーバーの **`~/.php.config`** として
+管理者が `config/oauth.example.php` をサーバーの **`~/.config/wakand/oauth.php`** として
 配置し、サーバー上のコピーだけにApp Secretを記入する。`~`はホームディレクトリを
-表し、`/.php.config`（OSルート）とは異なる。既存ファイルがある場合は上書きせず
-返却する配列へ `wakand` セクションを統合する。
+表す。以前のホーム直下 `.php.config` 案から、プロジェクト専用の配置へ変更した。
+ファイル内の配列は従来のひな形と同じ `wakand` セクションを使う。
 
 - ファイルは `~/www/` の外。UNIX権限はまず600とし、PHP実行ユーザーに読み取りが
   必要な場合は所有者・グループに合わせて調整する。公開ディレクトリへ移動しない。
@@ -55,22 +55,23 @@ WakaTimeアプリは既存登録を流用し、client_idは `pJDPWyzHvrc7iconHrn
 - `src/Config.php` の読み込み関数は秘密設定と `~/www/` の絶対パスを受け取り、
   シンボリックリンク解決後に公開領域内を拒否する。欠落・未編集・不正な設定は
   秘密値を含まないエラーとして扱う。
-- 読み込み関数は後続OAuth実装用。現行の公開用index.phpにはまだ接続せず、
-  サーバー上の絶対パス・PHPのopen_basedir制限・読み取り権限は未確認。
-  初期FTP CIは引き続きpublic内の許可ファイルだけを配布する。
+- 公開用index.phpは引き続き配置確認用。
+  `/android/wakAnd/config-check.php` は設定を読み込み、App ID・redirect URI・
+  Secretの非空/未編集チェック結果だけを `configured` の真偽値で返す。
+  値・秘密ファイルのパス・例外詳細は返さない。成功時200、失敗時503。
+  このチェックはWakaTimeへの通信を行わず、Secretの正当性・token交換の成功は保証しない。
 
 [環境パス資料](https://faq.interlink.or.jp/faq2/View/md.aspx?id=999&view)では
 公開領域は `/home/アカウント名/www/`、PHPコマンドは `/usr/local/bin/php`。
 管理画面のホーム名を当てはめた配置案は以下（PHPからの実読取は別途確認）:
 
 ```text
-/home/yui-kitamura/.php.config     管理者が手動配置する秘密設定
+/home/yui-kitamura/.config/wakand/oauth.php     管理者が手動配置する秘密設定
 /home/yui-kitamura/www/            公開領域全体。秘密設定を置かない
 ```
 
 資料の755/705は公開実行ファイル・ディレクトリ向けであり、秘密設定へそのまま
-適用しない。読み込み用の `.php.config` はWeb実行するファイルではないため、
-`.php` 拡張子へ変更する必要はない。URLの `/android/`、FTPの `/android/` と
+適用しない。URLの `/android/`、FTPの `/android/` と
 OS上の `/home/...` を混同しない。ドメイン別公開ディレクトリの対応は既存設定に従う。
 
 ### 認証の責務

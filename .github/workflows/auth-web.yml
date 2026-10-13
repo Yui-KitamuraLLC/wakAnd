@@ -32,6 +32,8 @@ jobs:
         run: |
           mkdir -p /tmp/wakand-auth-site/android/wakAnd
           cp authWeb/public/index.php /tmp/wakand-auth-site/android/wakAnd/index.php
+          cp authWeb/public/config-check.php /tmp/wakand-auth-site/android/wakAnd/config-check.php
+          cp authWeb/src/Config.php /tmp/wakand-auth-site/android/wakAnd/_config.php
           php -S 127.0.0.1:8080 -t /tmp/wakand-auth-site > /tmp/wakand-auth-php.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
@@ -39,6 +41,8 @@ jobs:
           python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": False}'
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST http://127.0.0.1:8080/android/wakAnd/)" = 405
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/oauth/callback)" = 404
+          test "$(curl --silent --output /tmp/wakand-config-check.json --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/config-check.php)" = 503
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-config-check.json").read_text()) == {"configured": False}'
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')

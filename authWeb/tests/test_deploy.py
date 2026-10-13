@@ -15,6 +15,8 @@ class DeploymentTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         (self.root / 'public').mkdir()
+        (self.root / 'src').mkdir()
+        (self.root / 'src/Config.php').write_text('<?php // No secrets')
         (self.root / 'public/index.php').write_text('<?php echo "test";')
         (self.root / 'secret.php').write_text('private')
         self.manifest(['index.php'])
@@ -51,7 +53,7 @@ class DeploymentTests(unittest.TestCase):
         (self.root / 'public/private.php').write_text('not public')
         self.env['FTP_SERVER_DIR'] = '/android/wakAnd/'
         output = deploy.stage(self.root, self.env)
-        self.assertEqual([p.name for p in output.iterdir()], ['index.php'])
+        self.assertEqual(sorted(p.name for p in output.iterdir()), ['_config.php', 'index.php'])
         self.assertEqual((output / 'index.php').read_bytes(), (self.root / 'public/index.php').read_bytes())
         with self.assertRaises(FileExistsError):
             deploy.stage(self.root, self.env)
