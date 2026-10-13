@@ -5,6 +5,10 @@ Androidの `app/` と同階層の `authWeb/` でPHPバックエンドを管理�
 以前のサブドメイン案は廃止。URLパスの `wakAnd` の大文字小文字は維持する。
 関連issue: #2、#8、#9、#12。現在は配置・CIの土台のみでOAuthは未実装。
 
+認証・DBの実装契約は [OAuth基盤設計](docs/oauth-design.md) を参照。
+DBは管理者が用意したMySQL 8.0を使用する。
+[初期DDL](schema/001_oauth_mysql.sql) は設計成果物で、まだ本番に適用していない。
+
 ## 配置とURL
 
 | 項目 | 設定 |
@@ -63,7 +67,7 @@ WakaTimeアプリは既存登録を流用し、client_idは `pJDPWyzHvrc7iconHrn
 
 [環境パス資料](https://faq.interlink.or.jp/faq2/View/md.aspx?id=999&view)では
 公開領域は `/home/アカウント名/www/`、PHPコマンドは `/usr/local/bin/php`。
-管理画面のホーム名を当てはめた配置案は以下（PHPからの実読取は別途確認）:
+管理画面のホーム名に基づく確定配置先は以下（PHPからの実読取確認済み）:
 
 ```text
 /home/yui-kitamura/.config/wakand/oauth.php     管理者が手動配置する秘密設定
@@ -76,26 +80,27 @@ OS上の `/home/...` を混同しない。ドメイン別公開ディレクト�
 
 ### 認証の責務
 
-- PHP 8.3以上（新規環境は8.4以上を推奨）、外部HTTPS通信、SQLiteまたはMySQL。
-- client_secretと暗号化したrefresh tokenはサーバー、access tokenと
+- PHP 8.3以上、外部HTTPS通信、PDO MySQL、sodium。拡張とDB接続は後続で実測する。
+- client_secretと暗号化したaccess/refresh tokenはサーバー、access tokenと
   端末別バックエンド認証情報はAndroidに保持する。
 - 認可・更新・解除はPHP経由、通常のWakaTime APIはAndroidから直接呼ぶ。
 - cronは必須にしない。有効期限は使用時に必ず検証し、期限切れデータは
   アクセス時に件数制限付きで削除する。無アクセス時の削除期限保証や
   失効失敗の自動再試行が必要になったら定期実行を追加する。
 
-予定経路（未実装・未登録）:
+予定経路（未実装。WakaTime側のcallback登録設定は保存済み）:
 
 | URLパス | 用途 |
 | --- | --- |
 | `/android/wakAnd/v1/link/start` | 端末と認可セッションの紐付け |
+| `/android/wakAnd/oauth/launch` | 開始セッションをブラウザへ結合して認可画面へ移動 |
 | `/android/wakAnd/oauth/callback` | WakaTimeのcallback、state検証・交換 |
 | `/android/wakAnd/app/complete` | Androidへ戻るApp Link |
-| `/android/wakAnd/v1/link/complete` | 開始端末への一回限りの受け渡し |
+| `/android/wakAnd/v1/link/complete` | 開始端末への連携確定と応答喪失時の再取得 |
 | `/android/wakAnd/v1/token/refresh` | 端末認証・排他制御付き更新 |
 | `/android/wakAnd/v1/link/disconnect` | 対象連携の失効・削除 |
 
-登録redirect URI候補:
+登録redirect URI:
 `https://yui.eng.pro/android/wakAnd/oauth/callback`。
 認可・交換・更新で同じ値を使う。上位サイトのrewriteに吸われないことを
 確認し、実装時にこのパス配下だけのルーティングを追加する。
@@ -135,8 +140,8 @@ with:
 2. 専用FTPユーザーと `/android/wakAnd/` への転送権限。
 3. GitHub Environment `auth-web-production` と、Secrets `ftp_user` / `ftp_password`。
    Environmentの配布許可ブランチはmainとwk1oauthに限定する。
-4. PHPバージョン、cURL/OpenSSL/sodium/PDO SQLite（またはPDO MySQL）、
-   公開領域外の保存先、外部WakaTimeへのHTTPS通信の確認。
+4. PHPバージョン、cURL/OpenSSL/sodium/PDO MySQL、DB接続・TLSの確認。
+   DBのホスト・名前・ユーザーは設計書に反映済み。秘密値は非公開設定だけに配置する。
 5. App Links用のサイト共通 `/.well-known/assetlinks.json` への追記。
 
 `protocol`省略は既存CIと同じ平文FTP（既定21番）。FTPS利用可能なら
@@ -156,7 +161,8 @@ with:
   OAuth本体公開前に切替・失敗時の復旧方式を確定する。
 - 転送後に公開URLのJSON応答を確認する。PHPの実行が確認できるまで
   secretをサーバーへ配置しない。
-- 実サーバー接続・転送・GitHub CI実行は未実施。
+- 既存の配置確認PHPのFTP転送・GitHub CI・秘密設定読取は成功済み。
+  DB接続・DDL適用・OAuthの実疎通は未実施。
 
 ローカル検証: `python -m unittest discover -s authWeb/tests -v`。
 PHPがある環境では `php -l authWeb/public/index.php`。
