@@ -35,10 +35,13 @@ GitHub 側の方針が変わった場合は、このファイルも更新して�
 - DBは管理者が用意したMySQL 8.0を利用。契約レンタルサーバー内から接続する。
   初期4テーブルとversion/checksum登録は管理者申告で済み。再作成・DROPは行わない。
   #3実装・管理者確認は `authWeb/docs/implementation-3.md`。2026-10-14に非公開鍵生成・設定参照・PHPのDB/schema照合を確認。
-  管理者がprovider_internalを明示採用し、実接続はTLS暗号化なし。maintenance=trueを保持。
+  管理者がprovider_internalを明示採用し、実接続はTLS暗号化なし。
   PR #14をwk1oauthへmergeし、本番配布CI成功。PHP8.3.32ではsodium拡張は未提供だが、同梱sodium_compatでXChaCha20の自己検証が成功した。
   配置手順は `authWeb/docs/sodium-compat-deployment.md`、2026-10-14 01:50頃JSTの本番診断は `authWeb/docs/production-diagnosis-20261014.md`。
-  maintenance=trueを保持。配置・暗号診断成功と稼働開始・実OAuth/実機成功を区別する。
+  その後管理者がmaintenance=falseへ切替。PR #15もwk1oauthへmerge・本番配布CI成功。
+  Pixel 6aで実認可・自動/手動記録・解除/再連携の成功報告あり。全E2E完了とは区別する。
+  最新の本番/実機記録は `authWeb/docs/production-rollout-20261014.md`。
+  正式版は操作者指定の1.5.0/code22。公開前の残検証は `release/verification-1.5.0.md`。
   管理者の標準手順は `authWeb/docs/browser-admin.md`（FFFTP＋ブラウザ）。サーバーCLIを必須にしない。
   本番DBへローカルPC・GitHub Actionsから接続しない。CIでは独立したテストDBを使う。
 

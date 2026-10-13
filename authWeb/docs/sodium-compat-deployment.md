@@ -1,5 +1,8 @@
 # sodium_compat同梱と配置手順
 
+現在のmaintenance解除・PR #15適用・実機観測は[最新の適用記録](production-rollout-20261014.md)を参照。
+以下は同梱版の配置手順と、配置診断時点の記録。
+
 2026-10-14 JST。PR #14をwk1oauthへmergeし、本番配布済み。稼働開始・実OAuth疎通は未実施。
 配置後の[本番診断](production-diagnosis-20261014.md)でsodium_compatの自己検証とDB/schema照合成功。
 maintenance=trueを維持し、管理認証の撤去後にadmin.php=404を再確認した。

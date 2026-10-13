@@ -15,8 +15,10 @@ WakaTime連携でAndroidのアプリ使用時間を自動トラッキングす�
 - **アプリ使用状況の自動トラッキング**: フォアグラウンドで使用中のアプリを検出し、WakaTime APIへHeartbeatを自動送信します
 - **アプリ別トラッキング設定**: トラッキング対象のアプリを個別に有効/無効に切り替えられます。アプリごとにWakaTimeプロジェクト名を割り当てることも可能です
 - **Chrome URL取得**: アクセシビリティサービスを利用して、Chromeで閲覧中のURLをHeartbeatのentityとして送信します
-- **WakaTimeユーザー情報表示**: APIキー設定後、連携中のWakaTimeユーザー名を表示し、ダッシュボードへのリンクを提供します
-- **カスタムAPIエンドポイント対応**: WakaTime互換サーバー（Wakapi等）のURLを自由に設定できます
+- **WakaTime OAuth連携**: 外部ブラウザで認可し、連携・再連携・解除を行えます。ユーザー情報、プロジェクト取得、自動記録、手動登録でOAuthを使用します
+- **WakaTimeユーザー情報表示**: 取得できたユーザー名とダッシュボードへのリンクを表示します。情報取得失敗と未連携は区別します
+- **手動時間登録**: プロジェクト・カテゴリ・時刻を指定して活動時間を登録できます
+- **接続先切替**: WakaTimeと独自ホストを切り替えられます。独自ホストは既存のHTTPS API URLとAPIキーを使用し、アプリ別設定・プロジェクト割当も保持します
 - **日本語/英語切替**: アプリ内で表示言語を切り替えられます
 - **常駐通知**: フォアグラウンドサービスとして動作し、現在トラッキング中のアプリ名を通知バーに表示します。通知のON/OFFも切替可能です
 - **新規アプリインストール通知**: 新しいアプリがインストールされた際に、トラッキング設定を促す通知を表示します
@@ -33,17 +35,19 @@ WakaTime連携でAndroidのアプリ使用時間を自動トラッキングす�
 
 ### WakaTime依存について
 
-本アプリは **WakaTimeアカウント（APIキー）が必須** です。WakaTimeは開発者向けの時間トラッキングサービスであり、本アプリはそのAPIクライアントとして動作します。WakaTime本体のダッシュボード（https://wakatime.com/dashboard）で記録されたデータを確認できます。WakaTime互換のセルフホストサーバー（Wakapi等）にも対応しています。
+公式WakaTimeでは **WakaTimeアカウントとOAuth認可** を使用します。WakaTimeは開発者向けの時間トラッキングサービスであり、本アプリはそのAPIクライアントとして動作します。WakaTime本体のダッシュボード（https://wakatime.com/dashboard）で記録されたデータを確認できます。独自ホストでは接続先のAPIキーを使用します。
+
+OAuth認証バックエンドは https://yui.eng.pro/android/wakAnd/ でトークンの受け渡し・更新・失効を管理します。活動データはAndroidから選択したAPIホストへ直接送信します。認証情報の保存・解除時の保留処理などは[プライバシーポリシー](../privacy_policy_ja.txt)を参照してください。
 
 ---
 
 ## 提示すべきスクショのシナリオ
 
-1. **メイン画面（APIキー未設定状態）**
-   - APIキー入力欄が空の状態、「ユーザー未連携」表示
+1. **メイン画面（WakaTime OAuth未連携状態）**
+   - WakaTime選択トグルとOAuth連携案内が見える状態
    - 各種設定ボタン（使用状況アクセス許可・アクセシビリティ有効化・言語切替・アプリ一覧）が見える状態
 
-2. **メイン画面（APIキー設定済み・連携済み状態）**
+2. **メイン画面（OAuth連携済み状態）**
    - WakaTimeユーザー名が表示されている状態
    - ダッシュボードリンクが表示されている状態
 
@@ -58,3 +62,21 @@ WakaTime連携でAndroidのアプリ使用時間を自動トラッキングす�
 
 6. **言語切替（英語表示）**
    - 英語に切り替えた状態のメイン画面（日本語との対比用）
+
+---
+
+## English listing
+
+### Short description
+
+Track Android app and browser activity with WakaTime OAuth or a custom host.
+
+### Full description
+
+wakAnd automatically records activity in selected Android apps and browser URLs and sends it to WakaTime or a configured custom host. Enable tracking per app and assign projects. View tracking status in a persistent notification, or log offline time manually using a project, category and time range.
+
+Use an external browser to authorize the official WakaTime service with OAuth. Connect, reconnect or disconnect from the app. User information, projects, automatic activity and manual entries use OAuth. A custom host uses its own saved HTTPS API URL and API key. Switching destinations retains app settings and project assignments.
+
+Usage Access is needed for app tracking. Browser URL tracking uses the optional Accessibility Service, enabled through the disclosure and Android settings. English and Japanese are supported. Charts, goals, leaderboards and detailed reports are viewed through the service dashboard. Automatic activity collected while offline is not queued for later delivery.
+
+The authorization backend at https://yui.eng.pro/android/wakAnd/ manages token delivery, refresh and revocation. Activity is sent directly from Android to the selected API host. See the [privacy policy](../privacy_policy.txt) for credential storage and disconnect handling.
