@@ -102,6 +102,15 @@ jobs:
           sudo service apache2 restart
           test "$(curl --fail --silent --show-error -H 'Authorization: Bearer disposable-ci-header' http://127.0.0.1/android/wakAnd/header-check.cgi)" = 'Bearer disposable-ci-header'
           test -z "$(curl --fail --silent --show-error http://127.0.0.1/android/wakAnd/header-check.cgi)"
+          # Also verify URL routing when the public folder is outside DocumentRoot.
+          sudo mkdir -p /var/www/wakand-alias-site/public
+          sudo cp -a authWeb/dist/. /var/www/wakand-alias-site/public/
+          printf 'Alias /android/wakAnd/ /var/www/wakand-alias-site/public/\n<Directory /var/www/wakand-alias-site/public>\nAllowOverride All\nRequire all granted\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-alias-test.conf > /dev/null
+          sudo a2enconf wakand-alias-test
+          sudo service apache2 restart
+          test "$(curl --silent --output /tmp/wakand-alias-callback.json --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-alias-callback.json").read_text())["error"] == "invalid_request"'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')

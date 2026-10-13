@@ -110,3 +110,5 @@ CLI用スクリプトはCLIが別途利用可能な環境の補助手段とし�
 MySQL greetingの根拠: [Protocol::HandshakeV10](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_v10.html)、
 [CLIENT_SSL capability](https://dev.mysql.com/doc/dev/mysql-server/latest/group__group__cs__capabilities__flags.html)。
 Apacheのヘッダー引き渡し: [CGIPassAuth](https://httpd.apache.org/docs/2.4/mod/core.html#cgipassauth)。
+公開フォルダとURLの位置が異なる場合の相対経路: [RewriteBase](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html#rewritebase)。
+公開`.htaccess`では`RewriteBase /android/wakAnd/`を明示する。独立CIではDocumentRoot内とAlias先の両方を確認する。
