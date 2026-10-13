@@ -1,0 +1,41 @@
+# Issue #1: WakaTime OAuth 移行
+
+このファイルは、今回の移行に固有の方針をまとめたものです。
+日程・進捗・依存関係・完了条件は GitHub の issue とマイルストーンで管理します。
+GitHub 側の方針が変わった場合は、このファイルも更新してください。
+
+- 親 issue: https://github.com/Yui-KitamuraLLC/wakAnd/issues/1
+- マイルストーン: https://github.com/Yui-KitamuraLLC/wakAnd/milestone/1
+
+## 目標と優先順位
+
+2026年10月13日〜16日（JST）のスプリントで、全機能 OAuth 対応版の検証・公開を目指します。
+本案を最優先で進めます。2026年11月1日は WakaTime 側の切替期限です。
+
+認証方式と必要環境を初日に確定することが日程の前提です。
+外部回答待ち・バックエンド準備・ストア審査などの阻害要因は親 issue に記録します。
+暫定版が必要になっても、本案の未完了タスクは閉じません。
+
+## WakaTime 認証
+
+- WakaTime は2026年11月1日から API キーを活動送信専用に変更する旨を通知している。
+- 読み取り API と external_durations は OAuth 対応を前提にする。
+- POST であることだけを根拠に、API キーで利用できると判断しない。
+- ネイティブアプリ向け OAuth の方式・スコープは公式仕様と疎通で確認する。
+- client_secret をソースコードや APK に埋め込まない。
+- API キー、access token、refresh token、client_secret をログ・issue・PR に出力しない。
+- トークンの保存・期限切れ・更新・失効・再認可・連携解除を扱う。
+- OAuth callback の state を検証する。
+- 認証方式と接続先を明確に管理し、WakaTime 用の認証情報を別ホストへ送らない。
+- Wakapi 等のカスタム接続先では、そのサーバーの仕様に応じた API キー利用を維持する。
+
+公式仕様: https://wakatime.com/developers
+
+## 作業の参照先
+
+- #2 認証方式・スコープ確定、OAuth アプリ設定: https://github.com/Yui-KitamuraLLC/wakAnd/issues/2
+- #3 認可・トークン管理・連携解除: https://github.com/Yui-KitamuraLLC/wakAnd/issues/3
+- #4 API 対応・カスタム接続先維持: https://github.com/Yui-KitamuraLLC/wakAnd/issues/4
+- #5 移行導線・連携状態表示: https://github.com/Yui-KitamuraLLC/wakAnd/issues/5
+- #6 実機・移行・失効・カスタム接続先の検証: https://github.com/Yui-KitamuraLLC/wakAnd/issues/6
+- #7 対応版公開・移行案内: https://github.com/Yui-KitamuraLLC/wakAnd/issues/7
