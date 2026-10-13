@@ -1,0 +1,74 @@
+name: Auth Web
+
+on:
+  pull_request:
+    paths: ['authWeb/**', '.github/workflows/auth-web.yml']
+  push:
+    branches: [main, wk1oauth]
+    paths: ['authWeb/**', '.github/workflows/auth-web.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install PHP CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php8.3-cli
+      - name: Validate PHP and deployment boundaries
+        run: |
+          find authWeb -name '*.php' -print0 | xargs -0 -r -n1 php -l
+          python3 -m unittest discover -s authWeb/tests -v
+      - name: Check PHP HTTP response
+        shell: bash
+        run: |
+          mkdir -p /tmp/wakand-auth-site/android/wakAnd
+          cp authWeb/public/index.php /tmp/wakand-auth-site/android/wakAnd/index.php
+          php -S 127.0.0.1:8080 -t /tmp/wakand-auth-site > /tmp/wakand-auth-php.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          curl --retry 5 --retry-connrefused --retry-delay 1 --fail --silent --show-error http://127.0.0.1:8080/android/wakAnd/ > /tmp/wakand-auth-response.json
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": False}'
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST http://127.0.0.1:8080/android/wakAnd/)" = 405
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/android/wakAnd/oauth/callback)" = 404
+
+  deploy:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')
+    needs: validate
+    runs-on: ubuntu-24.04
+    environment:
+      name: auth-web-production
+      url: https://yui.eng.pro/android/wakAnd/
+    concurrency:
+      group: auth-web-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Prepare reviewed public files and validate destination
+        run: python3 authWeb/scripts/deploy.py
+        env:
+          FTP_SERVER: yui.eng.pro
+          FTP_SERVER_DIR: /android/wakAnd/
+      - name: Sync public files FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: yui.eng.pro
+          username: ${{ secrets.ftp_user }}
+          password: ${{ secrets.ftp_password }}
+          local-dir: ./authWeb/dist/
+          server-dir: /android/wakAnd/
+          state-name: .wakand-auth-sync-state.json
+          dangerous-clean-slate: false
+      - name: Verify deployed PHP response over HTTPS
+        run: |
+          curl --fail --silent --show-error --max-time 30 https://yui.eng.pro/android/wakAnd/ > /tmp/wakand-auth-response.json
+          python3 -c 'import json; from pathlib import Path; assert json.loads(Path("/tmp/wakand-auth-response.json").read_text()) == {"service": "wakand-auth", "oauth_ready": False}'
