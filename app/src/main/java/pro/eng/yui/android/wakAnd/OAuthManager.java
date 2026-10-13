@@ -153,7 +153,7 @@ public final class OAuthManager {
                 if (result.optBoolean("pending")) throw new Failure("authorization_pending");
                 JSONObject active = credentials(pending); acceptToken(active, result);
                 JSONObject previous = doc.optJSONObject("active"); if (previous != null) queue(doc, previous);
-                doc.put("active", active); doc.remove("pending"); doc.remove("reauth_required"); commitResponse(doc, before);
+                doc.put("active", active); doc.put("oauth_used", true); doc.remove("pending"); doc.remove("reauth_required"); commitResponse(doc, before);
             } catch (Failure error) {
                 if ("link_expired".equals(error.code) || "reauth_required".equals(error.code) || "link_disconnected".equals(error.code)) {
                     try { synchronized (OAuthStore.LOCK) { JSONObject doc = read(), pending = doc.optJSONObject("pending"); if (pending != null && pending.has("link_id")) { queue(doc, pending); doc.put("reauth_required", true); } doc.remove("pending"); write(doc); } }
@@ -201,6 +201,74 @@ public final class OAuthManager {
         synchronized (OAuthStore.LOCK) {
             try { return read().getJSONObject("active").getLong("generation"); }
             catch (Exception error) { throw new Failure("reauth_required"); }
+        }
+    }
+    String activeIdentity() {
+        synchronized (OAuthStore.LOCK) {
+            try {
+                JSONObject active = read().optJSONObject("active");
+                return active == null ? "" : active.optString("link_id", "");
+            } catch (Failure error) { return ""; }
+        }
+    }
+    JSONObject authorizationInfo() {
+        synchronized (OAuthStore.LOCK) {
+            try {
+                JSONObject active = read().optJSONObject("active");
+                if (active == null) return new JSONObject();
+                return new JSONObject().put("generation", active.getLong("generation"))
+                        .put("expires_at", active.getLong("expires_at"))
+                        .put("granted_scope", active.getString("granted_scope"));
+            } catch (Exception error) { return new JSONObject(); }
+        }
+    }
+    boolean legacyHeartbeatAllowed() {
+        synchronized (OAuthStore.LOCK) {
+            try {
+                JSONObject doc = read();
+                return !doc.optBoolean("oauth_used") && !doc.has("active") && !doc.optBoolean("reauth_required")
+                        && !doc.has("revocations") && !doc.optBoolean("provider_confirmation_required");
+            } catch (Failure error) { return false; }
+        }
+    }
+    ApiRequestRunner.Credential credential(String url, String expectedLink, boolean unauthorized, long observed) throws Failure {
+        synchronized (NETWORK_LOCK) {
+            long before;
+            synchronized (OAuthStore.LOCK) {
+                JSONObject active = read().optJSONObject("active");
+                if (active == null || !expectedLink.equals(active.optString("link_id"))) throw new Failure("link_disconnected");
+                before = active.optLong("generation");
+            }
+            accessToken(url, unauthorized, observed);
+            synchronized (OAuthStore.LOCK) {
+                try {
+                    JSONObject active = read().getJSONObject("active");
+                    if (!expectedLink.equals(active.optString("link_id")) || !"active".equals(active.optString("status")))
+                        throw new Failure("link_disconnected");
+                    return new ApiRequestRunner.Credential(active.getString("access_token"), expectedLink,
+                            active.getLong("generation"), active.getLong("generation") != before);
+                } catch (Failure error) { throw error; } catch (Exception error) { throw new Failure("reauth_required"); }
+            }
+        }
+    }
+    boolean current(ApiRequestRunner.Credential credential) {
+        synchronized (OAuthStore.LOCK) {
+            try {
+                JSONObject active = read().optJSONObject("active");
+                return active != null && "active".equals(active.optString("status"))
+                        && credential.linkId.equals(active.optString("link_id"))
+                        && credential.generation == active.optLong("generation")
+                        && credential.token.equals(active.optString("access_token"));
+            } catch (Failure error) { return false; }
+        }
+    }
+    void reject(ApiRequestRunner.Credential credential) throws Failure {
+        synchronized (OAuthStore.LOCK) {
+            if (!current(credential)) return;
+            try {
+                JSONObject doc = read(), active = doc.getJSONObject("active");
+                active.remove("access_token"); active.put("status", "reauth_required"); write(doc);
+            } catch (Failure error) { throw error; } catch (Exception error) { throw new Failure("storage_unavailable"); }
         }
     }
     public void disconnect() throws Failure {

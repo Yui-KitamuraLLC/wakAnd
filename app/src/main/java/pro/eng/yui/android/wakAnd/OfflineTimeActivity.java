@@ -36,6 +36,8 @@ public class OfflineTimeActivity extends AppCompatActivity {
     private WakaTimeClient wakaTimeClient;
     private final List<String> projects = new ArrayList<>();
     private String[] categoryValues;
+    private Button btnSubmit;
+    private String externalId, submittedFingerprint;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -66,7 +68,11 @@ public class OfflineTimeActivity extends AppCompatActivity {
         setupDefaultTimes();
         setupQuickButtons();
 
-        Button btnSubmit = findViewById(R.id.btnSubmit);
+        if (savedInstanceState != null) {
+            externalId = savedInstanceState.getString("external_id");
+            submittedFingerprint = savedInstanceState.getString("submission_fingerprint");
+        }
+        btnSubmit = findViewById(R.id.btnSubmit);
         btnSubmit.setOnClickListener(v -> confirmAndSubmit());
     }
 
@@ -77,10 +83,21 @@ public class OfflineTimeActivity extends AppCompatActivity {
         spinnerProject.setAdapter(adapter);
 
         wakaTimeClient = new WakaTimeClient(this);
+        findViewById(R.id.btnRetryProjects).setOnClickListener(view -> fetchProjects(adapter));
+        fetchProjects(adapter);
+    }
+
+    private void fetchProjects(ArrayAdapter<String> adapter) {
         wakaTimeClient.fetchProjects(result -> runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            android.widget.TextView status = findViewById(R.id.txtProjectsStatus);
+            if (!result.successful()) { status.setText(ApiMessages.error(result.error)); return; }
+            String selected = spinnerProject.getSelectedItem() == null ? null : String.valueOf(spinnerProject.getSelectedItem());
             projects.clear();
-            projects.addAll(result);
+            projects.addAll(result.value);
             adapter.notifyDataSetChanged();
+            if (selected != null && projects.contains(selected)) spinnerProject.setSelection(projects.indexOf(selected));
+            status.setText(projects.isEmpty() ? R.string.api_empty_projects : R.string.api_projects_loaded);
         }));
     }
 
@@ -194,17 +211,33 @@ public class OfflineTimeActivity extends AppCompatActivity {
                 ? categoryValues[categoryIndex] : categoryValues[0];
         String meta = editMeta.getText() != null ? editMeta.getText().toString().trim() : "";
 
-        wakaTimeClient.sendExternalDuration(project, category, meta, startSec, endSec,
-                (success, message) -> runOnUiThread(() -> {
-                    if (success) {
+        ConnectionSettings connections = new ConnectionSettings(this);
+        ApiRequestRunner.Target target = connections.snapshot();
+        String fingerprint = new org.json.JSONArray().put(target.official).put(target.apiUrl).put(target.generation)
+                .put(target.official ? new OAuthManager(this).activeIdentity() : "")
+                .put(project).put(category).put(meta).put(String.valueOf(startSec)).put(String.valueOf(endSec)).toString();
+        if (submittedFingerprint != null && !submittedFingerprint.equals(fingerprint)) {
+            Toast.makeText(this, R.string.api_submission_changed, Toast.LENGTH_LONG).show(); return;
+        }
+        if (externalId == null) externalId = java.util.UUID.randomUUID().toString();
+        submittedFingerprint = fingerprint;
+        btnSubmit.setEnabled(false);
+        wakaTimeClient.sendExternalDuration(externalId, project, category, meta, startSec, endSec,
+                result -> runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    btnSubmit.setEnabled(true);
+                    if (result.successful()) {
                         Toast.makeText(this, R.string.offline_submit_success, Toast.LENGTH_SHORT).show();
                         finish();
-                    } else if ("no_api_key".equals(message)) {
-                        Toast.makeText(this, R.string.offline_no_api_key, Toast.LENGTH_LONG).show();
                     } else {
-                        Toast.makeText(this, R.string.offline_submit_failed, Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, ApiMessages.error(result.error), Toast.LENGTH_LONG).show();
                     }
                 }));
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state) {
+        state.putString("external_id", externalId); state.putString("submission_fingerprint", submittedFingerprint);
+        super.onSaveInstanceState(state);
     }
 
     @Override

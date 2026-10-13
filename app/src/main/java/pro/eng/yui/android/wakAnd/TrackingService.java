@@ -66,6 +66,11 @@ public class TrackingService extends Service {
             } else {
                 content = localizedContext.getString(R.string.label_not_tracked);
             }
+            String sendError = wakaTimeClient.heartbeatError();
+            if (sendError != null && isTrackedApp(packageName, appName)) {
+                content += " · " + localizedContext.getString(R.string.tracking_send_failed)
+                        + "\n" + localizedContext.getString(ApiMessages.error(sendError));
+            }
 
             // Force update if browser URL might have changed but content string is same
             // (though with host in content, it should change)

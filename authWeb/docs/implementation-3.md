@@ -32,8 +32,10 @@ pdo_mysql/curlはtrue、sodiumはfalse、extension_dir内のsodium.soも読取�
 CGIPassAuth Onの配置後、期限付き管理APIの認証とサーバー内鍵生成は成功。
 PHP 8.3.32 CGIへ変更後もsodium=false、sodium.soは読取不可だった。
 sodium_compat v2.5.2を固定・同梱し、XChaCha20と既存鍵・DB形式を保持する実装を追加した。
-[同梱版の配置手順](sodium-compat-deployment.md)に従い、本番適用前にPR #14をレビューする。
-AES-GCM移行案は採用しない。同梱版の本番動作・性能は未測定。
+[同梱版の配置手順](sodium-compat-deployment.md)に従い、検収後PR #14をwk1oauthへmerge・本番配布済み。
+AES-GCM移行案は採用しない。[2026-10-14 01:50頃JSTの診断](production-diagnosis-20261014.md)で
+backend=sodium_compat、available/self_test/php_64bit=true、configuration/database/schema=true。
+本番の公開ベクトルself_test_ms=40.348。token全体の本番性能・実OAuth疎通は未測定。
 RewriteBaseの明示配置後、callbackは503、入力不足のapp/completeは400になり、本番の404は解消。
 公開ルート200・内部ライブラリ403は維持している。503はmaintenance/必須拡張未充足の状態であり、認可成功ではない。
 開発用OAuthアプリ/DB/URLは未払い出し。自動試験はモック提供元と独立MySQL 8.0のみ。
@@ -97,7 +99,8 @@ cron・MySQLイベントは必須にしない。無アクセス時の上流失�
 - Apache: 経路rewrite・ライブラリ直接アクセス拒否・DDL非公開。
 - Android: ビルド・JUnitの送信先/復帰URL検証、応答喪失とセッション失効後の受取回復、
   通信中のローカル解除と遅延応答による復活防止、再連携とオフライン失効キュー保持。
-- 未実施: 本番同梱暗号の動作・性能、実WakaTime応答、実機App Links/Keystore/移行/通信断。
+- 未実施: 本番token処理全体の性能、実WakaTime応答、実機App Links/Keystore/移行/通信断。
+  本番同梱暗号の公開ベクトル自己検証は成功し、期限付き管理認証を撤去済み。
   本番DB/schema接続・鍵配置は確認済み。sodium拡張は未提供、DB通信はTLSなし。
   CIのモック試験をこれらの実測成功として報告しない。
 

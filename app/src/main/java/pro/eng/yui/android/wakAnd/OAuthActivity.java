@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Minimal #3 flow. The destination toggle and migration UI are owned by #5. */
+/** Official authorization is independent of the retained custom host settings. */
 public class OAuthActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private OAuthManager manager;
@@ -76,6 +76,13 @@ public class OAuthActivity extends AppCompatActivity {
                     default: resource = R.string.oauth_unlinked;
                 }
                 status.setText(message == 0 ? getString(resource) : getString(resource) + "\n" + getString(message));
+                org.json.JSONObject info = manager.authorizationInfo();
+                if (info.has("expires_at")) {
+                    java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss XXX", java.util.Locale.US);
+                    String expiry = format.format(new java.util.Date(info.optLong("expires_at") * 1000));
+                    status.append("\n" + getString(R.string.oauth_permissions, info.optString("granted_scope"))
+                            + "\n" + getString(R.string.oauth_expiry, expiry));
+                }
             });
         });
     }
