@@ -64,6 +64,7 @@ jobs:
           find authWeb -name '*.php' -print0 | xargs -0 -r -n1 php -l
           python3 -m unittest discover -s authWeb/tests -v
           php authWeb/tests/config_test.php
+          php authWeb/tests/admin_test.php
       - name: Check PHP HTTP response
         shell: bash
         run: |
@@ -88,6 +89,8 @@ jobs:
           sudo a2enconf wakand-test
           sudo service apache2 restart
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_core.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/_admin.php)" = 403
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/admin.php)" = 400
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/.htaccess)" = 403
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/schema/001_oauth_mysql.sql)" = 404

@@ -25,35 +25,24 @@ AndroidはKeystore + noBackupFilesDir + AtomicFileで端末資格情報/access t
 DB設定・暗号鍵は未設定、PHPからのDB接続・TLSは未確認。
 開発用OAuthアプリ/DB/URLは未払い出し。自動試験はモック提供元と独立MySQL 8.0のみ。
 
-## 管理者が行う追加設定
+## 管理者が行う追加設定（サーバーCLI不要）
 
-既存`/home/yui-kitamura/.config/wakand/oauth.php`の`wakand`内へ
-`config/oauth.example.php`のenvironment/maintenance/database/token_keys/rate_limit_keyを追加する。
-既存client_id/client_secret/redirect_uriは保持。実設定をGit・チャット・CIへ渡さない。
+標準手順を [ブラウザ・FFFTPでの管理者手順](browser-admin.md) に変更した。
+提供元のCGI/PHP案内の実行パスは、SSH/対話CLIが利用可能という証拠にはならない。
 
-1. `environment='production'`、`maintenance=true`を設定する。
-2. DBホスト/名前/ユーザーはひな形と同じ、port=3306。DB passwordは非公開ファイルだけへ記入する。
-3. `scripts/generate-keys.php`を公開領域外へ配置し、サーバー内PHP CLIで一度実行する。
-   作成される`~/.config/wakand/generated-keys.php`のtoken_keys/rate_limit_keyを
-   既存wakand配列へマージする。鍵は画面や標準出力に出ない。ファイルは排他的作成・権限600。
-   既存鍵がある場合は生成・置換しない。失敗した部分ファイルは管理者が確認する。
-4. TLSは自動fallbackしない。まず`tls_mode='required'`と提供元の信頼するCAの非公開パスを設定し、
-   下記診断で接続と暗号化を確認する。TLS不可または証明書の検証不能なら提供元へ確認する。
-   提供元内部接続に依存する運用を管理者が採用する場合だけ`provider_internal`へ明示変更する。
-   `provider_internal`は通信の暗号化を保証しない。ローカルPCやCIから本番接続を試さない。
-5. 拡張PDO MySQL/cURL/sodiumを確認。PHPのSQL入力はnative prepare・bind、非永続接続。
+- 既存の公開領域外oauth.phpを保持し、maintenance/environment/databaseをFFFTPで追加する。
+- Windows PCで期限付き管理用認証ファイルを作り、FFFTPで非公開フォルダへ置く。
+- 30分だけ有効なHTTPS管理画面から初期鍵を生成する。実鍵は非公開ファイルへ直接保存し、画面に出さない。
+- oauth.phpはgenerated-keys.phpをrequireしてtoken_keys/rate_limit_keyを参照する。
+- 同じ管理画面でPHP拡張/DB接続/TLS/schemaを読取診断し、必要な失効保留・期限切れ処理を明示実行する。
+- 確認後は非公開admin-access.phpを削除し、管理画面が404に戻ることを確認する。
+  生成した実鍵のgenerated-keys.phpは削除しない。
 
-サーバーにソースとschemaを置く場合も公開領域外の管理者用作業ディレクトリへ置く。
-秘密ファイルにPHPを直接includeする場合は下記診断のみを使い、var_dumpや例外表示は使わない。
+秘密値を出力せず、管理者によるFTP設定以外にDB接続情報を持ち出さない。
+PHPの非公開フォルダへの書込権限と、実環境での管理画面動作は未確認。
+本番DBへの外部接続・DDL再実行・DROPは行わない。CLI用スクリプトは利用可能な環境の補助手段として残す。
 
-```text
-/usr/local/bin/php /非公開作業ディレクトリ/authWeb/scripts/generate-keys.php
-/usr/local/bin/php /非公開作業ディレクトリ/authWeb/scripts/check-runtime.php
-```
-
-診断はextensions/configuration/database/schema/tls_encryptedと明示されたtls_modeだけを返す。
-maintenance=trueのまま読取診断可能。パスワード・鍵・接続情報・例外本文は返さず、DDLを実行しない。
-schema=trueはversion・既知DDL checksum・MySQL 8.0・4 InnoDBテーブル・外部キーの照合成功。
+schema診断はversion・既知DDL checksum・MySQL 8.0・4 InnoDBテーブル・外部キーを照合する。
 checksumは同じ001ファイルのLF/CRLFの2表現を許可する。SQLの内容が異なるものは503。
 登録行が不一致なら既存構造と適用ファイルを管理者が照合し、無条件に登録し直さない。
 
@@ -61,7 +50,8 @@ checksumは同じ001ファイルのLF/CRLFの2表現を許可する。SQLの内�
 
 検収とPR merge前にmaintenance=trueを維持する。wk3impl push/PRでは本番転送しない。
 wk1oauth/mainへmergeすると既存CIでFTP配置されるため、管理者設定の準備を先に済ませる。
-公開物はindex.php/config-check.php/.htaccessと秘密を含まない固定リストのPHPライブラリのみ。
+公開物はindex.php/config-check.php/admin.php/.htaccessと秘密を含まない固定リストのPHPライブラリのみ。
+admin.phpは非公開の期限付き認証ファイルがない/期限切れなら404。
 Apacheは本ディレクトリ内のRewriteEngine・AllowOverrideを許可する必要がある。
 CIでApacheの経路とライブラリ直接アクセス拒否を検証するが、実サーバーでの確認は別途必要。
 
@@ -76,7 +66,7 @@ CIでApacheの経路とライブラリ直接アクセス拒否を検証するが
   未知応答やrefresh欠落を成功扱いにしない。旧refresh再利用の暗黙補完はしない。
 
 更改時はmaintenance=trueにして処理中交換/更新の完了を確認する。互換性のないDDLは管理者だけが適用。
-maintenance=true中の手動掃除は`maintain.php`で可能。最大20行＋外部失効1件で、件数と最古日時だけ返す。
+maintenance=true中の手動掃除は期限付き認証の管理画面から可能。最大20行＋外部失効1件で、成功フラグと件数だけ返す。
 cron・MySQLイベントは必須にしない。無アクセス時の上流失効完了・物理削除日時は保証しない。
 失われたtoken更新結果を回収できない場合、WakaTime側の連携管理で解除確認を行う。
 端末Keystore鍵喪失時も既存アプリ設定は残る。読めなくなった連携の失効は提供元で確認する。
@@ -85,6 +75,7 @@ cron・MySQLイベントは必須にしない。無アクセス時の上流失�
 
 - Python: 転送許可リスト・パス逸脱・秘密/schema除外。
 - PHP: 構文、秘密設定の出力抑制、maintenance・鍵・TLSモード検証。
+  管理用認証の期限・同一origin・Authorization、無効時404、秘密非出力、鍵の非公開保存・上書き拒否も検証。
 - MySQL 8.0: DDLとschema gate、Cookie/state/verifier境界、暗号文/AAD差し替え、
   独立接続でのcallback/refresh競合、応答喪失後再取得、解除競合、結果不明後再送禁止、
   遅延成功の回収、失効保留・保持・制限。

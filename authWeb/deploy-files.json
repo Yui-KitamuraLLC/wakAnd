@@ -1,5 +1,6 @@
 [
   "index.php",
   "config-check.php",
-  ".htaccess"
+  ".htaccess",
+  "admin.php"
 ]

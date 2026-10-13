@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 // Copy to ~/.config/wakand/oauth.php OUTSIDE ~/www/, then edit that copy only.
+$privateKeys = is_file(__DIR__ . '/generated-keys.php') ? require __DIR__ . '/generated-keys.php' : [];
 return [
     'wakand' => [
         'client_id' => 'pJDPWyzHvrc7iconHrnmrPaa',
@@ -18,7 +19,7 @@ return [
             'tls_mode' => 'REPLACE_WITH_REQUIRED_OR_PROVIDER_INTERNAL',
             'tls_ca' => '', // For required: private path to a trusted CA certificate.
         ],
-        'token_keys' => ['current' => 'v1', 'keys' => ['v1' => 'REPLACE_WITH_32_BYTE_BASE64_KEY']],
-        'rate_limit_key' => 'REPLACE_WITH_SEPARATE_32_BYTE_BASE64_KEY',
+        'token_keys' => $privateKeys['token_keys'] ?? ['current' => 'v1', 'keys' => ['v1' => 'REPLACE_WITH_32_BYTE_BASE64_KEY']],
+        'rate_limit_key' => $privateKeys['rate_limit_key'] ?? 'REPLACE_WITH_SEPARATE_32_BYTE_BASE64_KEY',
     ],
 ];

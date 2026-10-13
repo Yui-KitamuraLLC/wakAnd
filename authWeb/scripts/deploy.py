@@ -51,7 +51,7 @@ def stage(root, env):
         shutil.copyfile(local, target)
     # This library contains no credentials. The private config stays on the server.
     for source, target in [('Config.php', '_config.php'), ('Core.php', '_core.php'),
-                           ('Database.php', '_database.php'), ('OAuthService.php', '_oauth.php'), ('Http.php', '_http.php')]:
+                           ('Database.php', '_database.php'), ('OAuthService.php', '_oauth.php'), ('Http.php', '_http.php'), ('Admin.php', '_admin.php')]:
         library = root / 'src' / source
         if library.is_symlink() or not library.is_file():
             raise ValueError('Missing or invalid runtime library')

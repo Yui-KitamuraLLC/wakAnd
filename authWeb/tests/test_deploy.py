@@ -16,7 +16,7 @@ class DeploymentTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         (self.root / 'public').mkdir()
         (self.root / 'src').mkdir()
-        for source in ['Config', 'Core', 'Database', 'OAuthService', 'Http']:
+        for source in ['Config', 'Core', 'Database', 'OAuthService', 'Http', 'Admin']:
             (self.root / ('src/' + source + '.php')).write_text('<?php // No secrets')
         (self.root / 'schema').mkdir()
         (self.root / 'schema/001_oauth_mysql.sql').write_bytes(b'-- test schema\n')
@@ -56,7 +56,7 @@ class DeploymentTests(unittest.TestCase):
         (self.root / 'public/private.php').write_text('not public')
         self.env['FTP_SERVER_DIR'] = '/android/wakAnd/'
         output = deploy.stage(self.root, self.env)
-        self.assertEqual(sorted(p.name for p in output.iterdir()), ['_config.php', '_core.php', '_database.php', '_http.php', '_oauth.php', '_schema.php', 'index.php'])
+        self.assertEqual(sorted(p.name for p in output.iterdir()), ['_admin.php', '_config.php', '_core.php', '_database.php', '_http.php', '_oauth.php', '_schema.php', 'index.php'])
         self.assertEqual((output / 'index.php').read_bytes(), (self.root / 'public/index.php').read_bytes())
         with self.assertRaises(FileExistsError):
             deploy.stage(self.root, self.env)
@@ -64,9 +64,11 @@ class DeploymentTests(unittest.TestCase):
     def test_release_contains_no_schema_or_private_configuration(self):
         root = Path(__file__).parents[1]
         plan = [name for name, _ in deploy.upload_plan(root)]
-        self.assertEqual(sorted(plan), ['.htaccess', 'config-check.php', 'index.php'])
+        self.assertEqual(sorted(plan), ['.htaccess', 'admin.php', 'config-check.php', 'index.php'])
         self.assertNotIn('oauth.example.php', plan)
         self.assertNotIn('001_oauth_mysql.sql', plan)
+        self.assertNotIn('admin-access.php', plan)
+        self.assertNotIn('generated-keys.php', plan)
 
 
 if __name__ == '__main__':

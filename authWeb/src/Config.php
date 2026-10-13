@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace WakAnd\Auth;
 
 /** Arguments must be trusted server paths, never HTTP input. */
-function loadConfig(string $configPath, string $webRoot): array
+function readPrivateSettings(string $configPath, string $webRoot): array
 {
     $failure = 'Private OAuth configuration is unavailable or invalid.';
     $configFile = realpath($configPath);
@@ -29,10 +29,17 @@ function loadConfig(string $configPath, string $webRoot): array
     } finally {
         ob_end_clean();
     }
-    $config = is_array($settings) ? ($settings['wakand'] ?? null) : null;
-    if ($unexpectedOutput !== '' || !is_array($config)) {
+    if ($unexpectedOutput !== '' || !is_array($settings)) {
         throw new \RuntimeException($failure);
     }
+    return $settings;
+}
+
+function loadConfig(string $configPath, string $webRoot): array
+{
+    $failure = 'Private OAuth configuration is unavailable or invalid.';
+    $config = readPrivateSettings($configPath, $webRoot)['wakand'] ?? null;
+    if (!is_array($config)) { throw new \RuntimeException($failure); }
     foreach (['client_id', 'client_secret', 'redirect_uri'] as $key) {
         if (!isset($config[$key]) || !is_string($config[$key]) || trim($config[$key]) === ''
             || str_starts_with($config[$key], 'REPLACE_')) {

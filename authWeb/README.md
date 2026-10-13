@@ -3,7 +3,8 @@
 Androidの `app/` と同階層の `authWeb/` でPHPバックエンドを管理する。
 公開URLは **https://yui.eng.pro/android/wakAnd/**。
 以前のサブドメイン案は廃止。URLパスの `wakAnd` の大文字小文字は維持する。
-関連issue: #2、#8、#9、#12。#3の実装・検収範囲と管理者操作は [実装手順](docs/implementation-3.md) を参照。
+関連issue: #2、#8、#9、#12。#3の実装・検収範囲は [実装手順](docs/implementation-3.md)、
+サーバーCLIを使わない設定・鍵生成・診断は [ブラウザ管理者手順](docs/browser-admin.md) を参照。
 
 認証・DBの実装契約は [OAuth基盤設計](docs/oauth-design.md) を参照。
 DBは管理者が用意したMySQL 8.0を使用する。
@@ -35,7 +36,8 @@ authWeb/
 ```
 
 公開するのは許可リストにある `public/` 内のファイルと、固定リストの秘密値を持たないPHPランタイム。
-ライブラリの直接HTTPアクセスは本ディレクトリの.htaccessで拒否する。設定・暗号鍵・DBは `~/www/` の外に置く。
+ライブラリの直接HTTPアクセスは本ディレクトリの.htaccessで拒否する。
+admin.phpは非公開の期限付き管理用認証ファイルがない場合404で無効。設定・暗号鍵・DBは `~/www/` の外に置く。
 秘密設定の転送は管理者が手動で行い、このCIでは扱わない。
 配置確認ページは `oauth_ready: false` を返す。認証の稼働確認ではない。
 
