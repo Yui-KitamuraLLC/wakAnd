@@ -1,5 +1,8 @@
 # #4/#5 API統合・接続先切替の検収
 
+PR #15は検収・merge後のCIが成功。主要な実機成功と残検証は[最新の適用記録](production-rollout-20261014.md)を参照。
+正式版1.5.0/code22の最終確認は[公開前検収](../../release/verification-1.5.0.md)で管理する。以下の準備時記録と現在地を区別する。
+
 2026-10-14 JST。wk1oauthのPR #14 merge commit `e4ad290`から作業。
 本番診断と稼働開始は[診断記録](production-diagnosis-20261014.md)で分ける。
 

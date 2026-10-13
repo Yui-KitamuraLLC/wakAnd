@@ -9,7 +9,9 @@ Androidの `app/` と同階層の `authWeb/` でPHPバックエンドを管理�
 認証・DBの実装契約は [OAuth基盤設計](docs/oauth-design.md) を参照。
 DBは管理者が用意したMySQL 8.0を使用する。
 [初期DDL](schema/001_oauth_mysql.sql) の4テーブルとversion/checksumは管理者申告で登録済み。2026-10-14にサーバー内PHPからDB接続・読取照合を確認。provider_internalでTLS暗号化なし。
-同梱ライブラリの本番適用はレビュー待ち。[ライブラリ配置手順](docs/sodium-compat-deployment.md)を参照。
+同梱ライブラリの本番配布・暗号自己検証は成功。管理者がmaintenance=falseへ切替し、実認可・自動/手動記録・解除/再連携の実機成功報告あり。
+最新の[適用・実機記録](docs/production-rollout-20261014.md)と[ライブラリ配置手順](docs/sodium-compat-deployment.md)を参照。
+主要な正常操作の成功と、全検証・Android配布物の公開完了は区別する。
 
 ## 配置とURL
 
