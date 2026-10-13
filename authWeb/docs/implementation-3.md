@@ -30,7 +30,10 @@ MySQL greetingのTLS対応通知はfalse。管理者の明示選択によりprov
 pdo_mysql/curlはtrue、sodiumはfalse、extension_dir内のsodium.soも読取不可。
 暗号方式を変更したり、必須拡張の検証を迂回したりせず、PHP環境の対応確認を待つ。
 CGIPassAuth Onの配置後、期限付き管理APIの認証とサーバー内鍵生成は成功。
-callback/app/complete経路は本番HTTPで404のまま。独立CIのApache経路成功と区別する。
+PHP 8.3.32 CGIへ変更後もsodium=false、sodium.soは読取不可だった。
+AES-GCMへの[変更検討案](aes-gcm-proposal.md)を用意したが、現行暗号方式を変更していない。
+RewriteBaseの明示配置後、callbackは503、入力不足のapp/completeは400になり、本番の404は解消。
+公開ルート200・内部ライブラリ403は維持している。503はmaintenance/必須拡張未充足の状態であり、認可成功ではない。
 開発用OAuthアプリ/DB/URLは未払い出し。自動試験はモック提供元と独立MySQL 8.0のみ。
 
 ## 管理者が行う追加設定（サーバーCLI不要）
