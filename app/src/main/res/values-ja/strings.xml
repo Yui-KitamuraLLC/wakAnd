@@ -30,9 +30,9 @@
     <string name="user_not_linked">（未連携）</string>
     <string name="dashboard">ダッシュボード</string>
     <string name="btn_clear_api_key">APIキーをクリア</string>
-    <string name="api_key_unsaved">新APIキー未連携</string>
+    <string name="api_key_unsaved">APIキーの変更は未保存です</string>
     <string name="api_key_cleared">APIキーをクリアしました</string>
-    <string name="confirm_clear_api_key">連携解除しますがよろしいですか？</string>
+    <string name="confirm_clear_api_key">保存済みAPIキーを削除しますか？WakaTime OAuth連携とアプリ別設定は保持します。</string>
     <string name="yes">はい</string>
     <string name="no">いいえ</string>
     <string name="new_app_installed">新しいアプリがインストールされました</string>
@@ -96,4 +96,23 @@
     <string name="oauth_invalid_callback">この復帰リンクは端末で開始した認可と一致しません。</string>
     <string name="oauth_retry_later">処理中または回数制限中です。しばらく待って再確認してください。</string>
     <string name="oauth_connection_failed">通信を確認できませんでした。既存の連携情報は保持しています。</string>
+    <string name="connection_toggle">WakaTime ／ 独自ホスト（OFF）</string>
+    <string name="custom_connection">独自ホスト：保存済みAPI URLとAPIキーを使用します。WakaTime OAuth連携は保持します。</string>
+    <string name="oauth_legacy_migration">APIキーのみ：活動送信は継続します。ユーザー情報・プロジェクト取得・手動登録にはWakaTime OAuthを連携してください。</string>
+    <string name="api_reauth">認証に失敗しました。WakaTimeはOAuthを連携・再連携し、独自ホストはAPIキーを確認してください。</string>
+    <string name="api_forbidden">権限が不足しています。許可した権限を確認してください。連携情報は保持しています。</string>
+    <string name="api_unavailable">情報を取得できませんでした。通信を確認して再取得してください。連携情報とアプリ別設定は保持しています。</string>
+    <string name="api_user_unavailable">ユーザー情報を取得できていません</string>
+    <string name="api_invalid_destination">独自ホストのHTTPS API URLを入力してください。認証情報・クエリ・フラグメントは含められません。公式サービスはWakaTimeを選択してください。</string>
+    <string name="api_destination_changed">接続先または連携が変更されました。選択中の接続先からやり直してください。</string>
+    <string name="api_delivery_unknown">送信結果を確認できませんでした。同じ内容を再送すると識別子を再利用します。</string>
+    <string name="api_submission_changed">前回の記録が送信済みの可能性があります。接続先と内容を変えずに再送するか、ダッシュボードを確認してから新しい記録を開始してください。</string>
+    <string name="api_empty_projects">プロジェクトは0件でした。既存のアプリ別割り当ては保持します。アプリ一覧から新規プロジェクトを作成できます。</string>
+    <string name="api_projects_loaded">プロジェクトを取得しました</string>
+    <string name="api_retry">再取得</string>
+    <string name="api_retry_projects">プロジェクトを再取得</string>
+    <string name="api_retry_user">ユーザー情報を再取得</string>
+    <string name="tracking_send_failed">活動の送信状態を確認してください</string>
+    <string name="oauth_permissions">許可された権限：%1$s</string>
+    <string name="oauth_expiry">トークン有効期限：%1$s</string>
 </resources>

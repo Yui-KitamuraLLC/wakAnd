@@ -28,6 +28,9 @@ The collected information is used solely for:
 5. Data Retention
 The App does not maintain a permanent local database of your browsing history; it primarily acts as a bridge to send data to WakaTime.
 
+WakaTime OAuth authorization is managed by the wakAnd backend at https://yui.eng.pro/android/wakAnd/. It stores encrypted access and refresh tokens, token expiry and granted permissions, and hashed device authorization credentials for token delivery, refresh and revocation. Activity content, app names, browser URLs, email and project lists are not stored by this backend; activity is sent directly from Android to the selected API host over HTTPS. The backend uses a provider-managed MySQL internal connection without TLS; tokens are encrypted before database storage.
+The device stores its OAuth credentials encrypted with Android Keystore and excludes them from backup. Disconnect stops local OAuth use immediately; provider revocation may remain queued when offline. Removed credentials and confirmed revoked links are retained for up to seven days for retry handling; uncertain or pending revocations are retained until resolved. Cleanup occurs during use or administrator maintenance, so physical deletion at an exact time is not guaranteed. Switching the destination retains the saved URL, API key, app settings and OAuth connection; credentials for the other destination are not sent.
+
 6. Changes to This Policy
 We may update our Privacy Policy from time to time. You are advised to review this page periodically for any changes.
 
@@ -35,3 +38,4 @@ We may update our Privacy Policy from time to time. You are advised to review th
 If you have any questions about this Privacy Policy, please contact the developer.
 
 Enacted: 2026-07-25
+Updated for OAuth: 2026-10-14

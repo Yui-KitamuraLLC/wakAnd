@@ -86,7 +86,7 @@ public class AppListActivity extends AppCompatActivity {
         recyclerApps.setAdapter(adapter);
 
         wakaTimeClient = new WakaTimeClient(this);
-        wakaTimeClient.fetchProjects(projects -> runOnUiThread(() -> adapter.setApiProjects(projects)));
+        fetchProjects();
 
         spinnerSort.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
@@ -108,6 +108,22 @@ public class AppListActivity extends AppCompatActivity {
             appSettingsManager.saveAll(adapter.getSettings());
             Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void fetchProjects() {
+        wakaTimeClient.fetchProjects(result -> runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (result.successful()) {
+                adapter.setApiProjects(result.value);
+                if (result.value.isEmpty()) Toast.makeText(this, R.string.api_empty_projects, Toast.LENGTH_LONG).show();
+            } else {
+                new androidx.appcompat.app.AlertDialog.Builder(this).setMessage(ApiMessages.error(result.error))
+                        .setPositiveButton(R.string.api_retry, (dialog, which) -> fetchProjects())
+                        .setNeutralButton(R.string.oauth_settings, (dialog, which) ->
+                                startActivity(new android.content.Intent(this, OAuthActivity.class)))
+                        .setNegativeButton(R.string.no, null).show();
+            }
+        }));
     }
 
     private void addPackageToList(String pkg) {

@@ -1,6 +1,8 @@
 # sodium_compat同梱と配置手順
 
-2026-10-14 JST。PR #14のレビュー対象。本番への適用・稼働開始は未実施。
+2026-10-14 JST。PR #14をwk1oauthへmergeし、本番配布済み。稼働開始・実OAuth疎通は未実施。
+配置後の[本番診断](production-diagnosis-20261014.md)でsodium_compatの自己検証とDB/schema照合成功。
+maintenance=trueを維持し、管理認証の撤去後にadmin.php=404を再確認した。
 共有サーバーのPHP設定や拡張を変更せず、wakAndの公開フォルダだけへPHPライブラリを同梱する。
 既存のXChaCha20-Poly1305、24バイトnonce、認証タグ、AAD、キーIDを保持する。
 生成済み実鍵・rate limit鍵・秘密設定・DBの変更は不要。AES-GCMへの移行案は採用しない。

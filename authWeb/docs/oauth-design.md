@@ -3,7 +3,8 @@
 2026-10-13。#2 / #10 / #11 / #12 → #3 / #4 / #5 / #6 / #13。
 これは設計。管理者申告で本番初期4テーブルとversion/checksum登録は済み。
 2026-10-14にPHPからのDB/schema読取照合・暗号鍵配置を確認。provider_internalでTLS暗号化なし。
-OAuth実疎通は未確認。暗号実装は同梱sodium_compat対応を追加し、本番適用前のレビュー待ち。
+OAuth実疎通は未確認。同梱sodium_compat対応のPR #14はmerge・配布済み。
+[2026-10-14 01:50頃JSTの本番診断](production-diagnosis-20261014.md)で暗号自己検証・DB/schema照合成功、maintenance=trueを維持。
 実装と管理者向け後続手順は [#3実装](implementation-3.md) を参照。
 本番設定のPHP読み取りと既存CIのFTP配置は確認済み。
 
