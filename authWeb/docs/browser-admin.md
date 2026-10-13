@@ -38,6 +38,8 @@ SSH/対話CLIが利用可能とは確認できない。PHP実行パスの記載�
 4. `https://yui.eng.pro/android/wakAnd/admin.php` をブラウザで開き、
    ローカルaccess-key.txtの内容をパスワード欄へ貼り付ける。チャットやログへ貼らない。
    リクエストは同一originのHTTPS POST＋Authorizationヘッダー。CORS・URL認証・Cookieログインは使わない。
+   公開`.htaccess`の`CGIPassAuth On`も配置する。CGI/FastCGIへAuthorizationを渡すために必要。
+   正しいキーでも401になる場合は、このヘッダー引き渡しを確認し、認証条件を緩めない。
    30分を過ぎたら新しい管理用認証ファイルを作成・置換する。
 
 キー作成後も実設定や画面入力を含むスクリーンショットは共有せず、確認結果のフラグだけを共有する。
@@ -104,3 +106,4 @@ CLI用スクリプトはCLIが別途利用可能な環境の補助手段とし�
 
 MySQL greetingの根拠: [Protocol::HandshakeV10](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_v10.html)、
 [CLIENT_SSL capability](https://dev.mysql.com/doc/dev/mysql-server/latest/group__group__cs__capabilities__flags.html)。
+Apacheのヘッダー引き渡し: [CGIPassAuth](https://httpd.apache.org/docs/2.4/mod/core.html#cgipassauth)。

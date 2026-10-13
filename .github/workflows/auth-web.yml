@@ -83,7 +83,7 @@ jobs:
       - name: Verify Apache routing and library access boundary
         run: |
           sudo apt-get install -y apache2 libapache2-mod-php8.3
-          sudo a2enmod rewrite
+          sudo a2enmod rewrite cgid
           sudo cp -a /tmp/wakand-auth-site/android /var/www/html/
           printf '<Directory /var/www/html/android/wakAnd>\nAllowOverride All\nRequire all granted\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-test.conf > /dev/null
           sudo a2enconf wakand-test
@@ -94,6 +94,14 @@ jobs:
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/.htaccess)" = 403
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/oauth/callback)" = 400
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1/android/wakAnd/schema/001_oauth_mysql.sql)" = 404
+          # Exercise the CGI header boundary used by shared-host PHP (no real credential).
+          printf '#!/bin/sh\nprintf "Content-Type: text/plain\\r\\n\\r\\n%%s" "$HTTP_AUTHORIZATION"\n' | sudo tee /var/www/html/android/wakAnd/header-check.cgi > /dev/null
+          sudo chmod 755 /var/www/html/android/wakAnd/header-check.cgi
+          printf '<Directory /var/www/html/android/wakAnd>\nOptions +ExecCGI\nAddHandler cgi-script .cgi\n</Directory>\n' | sudo tee /etc/apache2/conf-available/wakand-cgi-test.conf > /dev/null
+          sudo a2enconf wakand-cgi-test
+          sudo service apache2 restart
+          test "$(curl --fail --silent --show-error -H 'Authorization: Bearer disposable-ci-header' http://127.0.0.1/android/wakAnd/header-check.cgi)" = 'Bearer disposable-ci-header'
+          test -z "$(curl --fail --silent --show-error http://127.0.0.1/android/wakAnd/header-check.cgi)"
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/wk1oauth')
