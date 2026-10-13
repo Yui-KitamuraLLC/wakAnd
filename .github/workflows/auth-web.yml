@@ -58,6 +58,11 @@ jobs:
         env:
           FTP_SERVER: yui.eng.pro
           FTP_SERVER_DIR: /android/wakAnd/
+      - name: Compare PASV and EPSV reads
+        run: python3 authWeb/scripts/diagnose_ftp.py
+        env:
+          FTP_USER: ${{ secrets.ftp_user }}
+          FTP_PASSWORD: ${{ secrets.ftp_password }}
       - name: Sync public files FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
